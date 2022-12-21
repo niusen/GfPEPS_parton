@@ -69,21 +69,21 @@ function create_mpo(coe)
     mpo_dict[:data]["FermionNumber(0)"]=m;
 
     m=mpo_dict[:data]["FermionNumber(1)"];
-    m[1,1]=0;
+    m[1,1]=1;
     m[1,2]=coe;
     m[2,1]=0;
-    m[2,2]=0;
+    m[2,2]=1;
     mpo_dict[:data]["FermionNumber(1)"]=m;
 
     m=mpo_dict[:data]["FermionNumber(2)"];
-    m[1]=1;
+    m[1]=0;
     mpo_dict[:data]["FermionNumber(2)"]=m;
     mpo=convert(TensorMap, mpo_dict);
     return mpo
 end
 
-function build_mpo_set(Length,coes)
-    @assert length(coes)==Length;
+function build_mpo_set(coes)
+    Length=length(coes);
     mpo_set=Vector(undef,Length);
     mpo_left=create_left_mpo();
     mpo_right=create_right_mpo();
