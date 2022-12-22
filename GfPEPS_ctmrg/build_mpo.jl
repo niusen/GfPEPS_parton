@@ -10,7 +10,7 @@ function create_vaccum(Length)
     
     Vf0=ℂ[FermionNumber](0=>1);
     Vf=ℂ[FermionNumber](0=>1,1=>1);
-    A = TensorMap(randn, Vf0 ← Vf0 ⊗ Vf);
+    A = TensorMap(randn, Vf0 ← Vf0 ⊗ Vf)+im*TensorMap(randn, Vf0 ← Vf0 ⊗ Vf);
 
     A_dict=convert(Dict,A)
     m=A_dict[:data]["FermionNumber(0)"];
@@ -28,7 +28,7 @@ end
 function create_left_mpo()
     Vf0=ℂ[FermionNumber](1=>1);
     Vf=ℂ[FermionNumber](0=>1, 1=>1);
-    mpo = TensorMap(randn, Vf0 ← Vf);
+    mpo = TensorMap(randn, Vf0 ← Vf)+im*TensorMap(randn, Vf0 ← Vf);
 
     mpo_dict=convert(Dict,mpo)
     m=mpo_dict[:data]["FermionNumber(1)"];
@@ -42,7 +42,7 @@ function create_right_mpo()
     
     Vf=ℂ[FermionNumber](0=>1, 1=>1);
     Vf0=ℂ[FermionNumber](0=>1);
-    mpo = TensorMap(randn, Vf ← Vf0);
+    mpo = TensorMap(randn, Vf ← Vf0)+im*TensorMap(randn, Vf ← Vf0);
 
     mpo_dict=convert(Dict,mpo)
     m=mpo_dict[:data]["FermionNumber(0)"];
@@ -61,7 +61,7 @@ function create_mpo(coe)
 
 
     Vf=ℂ[FermionNumber](0=>1, 1=>1);
-    mpo = TensorMap(randn, Vf ⊗ Vf ← Vf ⊗ Vf);
+    mpo = TensorMap(randn, Vf ⊗ Vf ← Vf ⊗ Vf)+im*TensorMap(randn, Vf ⊗ Vf ← Vf ⊗ Vf);
 
     mpo_dict=convert(Dict,mpo)
     m=mpo_dict[:data]["FermionNumber(0)"];
@@ -76,7 +76,7 @@ function create_mpo(coe)
     mpo_dict[:data]["FermionNumber(1)"]=m;
 
     m=mpo_dict[:data]["FermionNumber(2)"];
-    m[1]=0;
+    m[1]=1;# this 1 is very important, it has the effect of string operator
     mpo_dict[:data]["FermionNumber(2)"]=m;
     mpo=convert(TensorMap, mpo_dict);
     return mpo
@@ -89,7 +89,7 @@ function build_mpo_set(coes)
     mpo_right=create_right_mpo();
 
     for cc=1:Length
-        mpo_set[cc]=create_mpo(coes[cc]);
+        mpo_set[cc]=create_mpo(coes[cc])
     end
 
     @tensor mpo1[:]:=mpo_left[-1,1]*mpo_set[1][1,-2,-3,-4];
@@ -119,6 +119,9 @@ function mpo_mps(mpo_set,mps_set)
 
     for cc=1:length(mps_set)-1
         UL=unitary(fuse(space(mps_set[cc+1],1)⊗space(mps_set[cc+1],2)),space(mps_set[cc+1],1)⊗space(mps_set[cc+1],2));
+        # println(UL)
+        # println(UL')
+        # println(UL*UL')
         @tensor mps[:]:=mps_set[cc][-1,1,2,-3]*UL'[1,2,-2];
         mps_set[cc]=mps;
         @tensor mps[:]:=mps_set[cc+1][1,2,-2,-3,-4]*UL[-1,1,2];
