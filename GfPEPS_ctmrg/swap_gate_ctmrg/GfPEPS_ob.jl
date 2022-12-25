@@ -5,6 +5,7 @@ using HDF5, JLD2, MAT
 cd("D:\\My Documents\\Code\\Julia_codes\\Tensor network\\GfPEPS_parton\\GfPEPS_ctmrg\\swap_gate_ctmrg")
 
 include("GfPEPS_CTMRG.jl")
+include("GfPEPS_model.jl")
 include("swap_funs.jl")
 
 
@@ -33,9 +34,6 @@ A_new = TensorMap(A_new, Vdummy ⊗ V ⊗ V ⊗ V ⊗ V ⊗ V ← V');
 @assert norm(convert(Array,A_new)[1,:,:,:,:,:,:]-A)/norm(A)<1e-14
 A=A_new; # dummy,P1,P2,L,R,D,U
 
-# swap_gate(A,2,3)
-# parity_gate(A,2)
-# swap_operation(A,7,2,3)
 
 U_phy1=unitary(fuse(space(A,1)⊗space(A,2)⊗space(A,3)), space(A,1)⊗space(A,2)⊗space(A,3));
 @tensor A[:]:=A[1,2,3,-2,-3,-4,-5]*U_phy1[-1,1,2,3]; # P,L,R,D,U
@@ -85,15 +83,69 @@ conv_check="singular_value";
 CTM, AA_fused, U_L,U_D,U_R,U_U=init_CTM(chi,A_fused,"PBC",true);
 @time CTM, AA_fused, U_L,U_D,U_R,U_U=CTMRG(AA_fused,chi,conv_check,tol,CTM,CTM_ite_nums,CTM_trun_tol);
 
-# @time E_up, E_down=evaluate_ob(parameters, U_phy, A_unfused, A_fused, AA_fused, U_L,U_D,U_R,U_U, CTM, "E_triangle");
-# @time E_up_12, E_up_31, E_up_23, E_down_12, E_down_31, E_down_23=evaluate_ob(parameters, U_phy, A_unfused, A_fused, AA_fused, U_L,U_D,U_R,U_U, CTM, "E_bond");
 
-# display((E_up+E_down)/3)
 
 display(space(CTM["Cset"][1]))
 display(space(CTM["Cset"][2]))
 display(space(CTM["Cset"][3]))
 display(space(CTM["Cset"][4]))
+
+Ident, NA, NB, NANB, CAdag, CA, CBdag, CB=Hamiltonians(U_phy1,U_phy2)
+
+O1=NA;
+O2=Ident;
+direction="x";
+is_odd=false;
+NA=evaluate_ob(O1, O2, A_fused, AA_fused, CTM, direction, is_odd)
+
+O1=NB;
+O2=Ident;
+direction="x";
+is_odd=false;
+NB=evaluate_ob(O1, O2, A_fused, AA_fused, CTM, direction, is_odd)
+
+O1=NANB;
+O2=Ident;
+direction="x";
+is_odd=false;
+NANB=evaluate_ob(O1, O2, A_fused, AA_fused, CTM, direction, is_odd)
+
+
+
+
+O1=CAdag;
+O2=CA;
+direction="x";
+is_odd=true;
+CAdag_CA=evaluate_ob(O1, O2, A_fused, AA_fused, CTM, direction, is_odd)
+
+O1=CAdag;
+O2=CB;
+direction="x";
+is_odd=true;
+CAdag_CB=evaluate_ob(O1, O2, A_fused, AA_fused, CTM, direction, is_odd)
+
+O1=CBdag;
+O2=CA;
+direction="x";
+is_odd=true;
+CBdag_CA=evaluate_ob(O1, O2, A_fused, AA_fused, CTM, direction, is_odd)
+
+O1=CBdag;
+O2=CB;
+direction="x";
+is_odd=true;
+CBdag_CB=evaluate_ob(O1, O2, A_fused, AA_fused, CTM, direction, is_odd)
+
+println("NA=   "*string(NA))
+println("NB=   "*string(NB))
+println("NANB=   "*string(NANB))
+
+println("CAdag_CA=   "*string(CAdag_CA))
+println("CAdag_CB=   "*string(CAdag_CB))
+println("CBdag_CA=   "*string(CBdag_CA))
+println("CBdag_CB=   "*string(CBdag_CB))
+
 
 
 

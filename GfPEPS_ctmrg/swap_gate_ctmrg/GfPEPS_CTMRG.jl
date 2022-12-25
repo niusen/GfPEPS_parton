@@ -2,9 +2,9 @@ using LinearAlgebra
 using TensorKit
 
 
-function build_double_layer_swap(A)
+function build_double_layer_swap(Ap,A)
     #display(space(A))
-    Ap=deepcopy(A');
+
 
     gate=swap_gate(Ap,1,4); @tensor Ap[:]:=Ap[1,-2,-3,2,-5]*gate[-1,-4,1,2];  
     gate=swap_gate(Ap,2,3); @tensor Ap[:]:=Ap[-1,1,2,-4,-5]*gate[-2,-3,1,2];  
@@ -19,10 +19,26 @@ function build_double_layer_swap(A)
     Ap=permute(Ap,(1,2,),(3,4,5))
     A=permute(A,(1,2,),(3,4,5));
     
-    U_L=unitary(fuse(space(A, 1)' ⊗ space(A, 1)), space(A, 1)' ⊗ space(A, 1));
-    U_D=unitary(fuse(space(A, 2)' ⊗ space(A, 2)), space(A, 2)' ⊗ space(A, 2));
-    U_R=inv(U_L);
-    U_U=inv(U_D);
+    # U_L=unitary(fuse(space(A, 1)' ⊗ space(A, 1)), space(A, 1)' ⊗ space(A, 1));
+    # U_D=unitary(fuse(space(A, 2)' ⊗ space(A, 2)), space(A, 2)' ⊗ space(A, 2));
+    # U_R=inv(U_L);
+    # U_U=inv(U_D);
+
+    # U_Lp=unitary(fuse(space(Ap, 1) ⊗ space(A, 1)), space(Ap, 1) ⊗ space(A, 1));
+    # U_Dp=unitary(fuse(space(Ap, 2) ⊗ space(A, 2)), space(Ap, 2) ⊗ space(A, 2));
+    # U_Rp=unitary(space(Ap, 3)' ⊗ space(A, 3)', fuse(space(Ap, 3)' ⊗ space(A, 3)'));
+    # U_Up=unitary(space(Ap, 4)' ⊗ space(A, 4)', fuse(space(Ap, 4)' ⊗ space(A, 4)'));
+
+    # println(norm(U_R-U_Rp)/norm(U_R))
+    # println(norm(U_L-U_Lp)/norm(U_L))
+    # println(norm(U_D-U_Dp)/norm(U_D))
+    # println(norm(U_U-U_Up)/norm(U_U))
+
+    U_L=unitary(fuse(space(Ap, 1) ⊗ space(A, 1)), space(Ap, 1) ⊗ space(A, 1));
+    U_D=unitary(fuse(space(Ap, 2) ⊗ space(A, 2)), space(Ap, 2) ⊗ space(A, 2));
+    U_R=unitary(space(Ap, 3)' ⊗ space(A, 3)', fuse(space(Ap, 3)' ⊗ space(A, 3)'));
+    U_U=unitary(space(Ap, 4)' ⊗ space(A, 4)', fuse(space(Ap, 4)' ⊗ space(A, 4)'));
+
     # display(space(U_L))
     # display(space(U_D))
     # display(space(U_R))
@@ -421,7 +437,7 @@ function init_CTM(chi,A,type,CTM_ite_info)
     end
     CTM=Dict([("Cset", Cset), ("Tset", Tset)]);
 
-    AA_fused, U_L,U_D,U_R,U_U=build_double_layer_swap(A);
+    AA_fused, U_L,U_D,U_R,U_U=build_double_layer_swap(deepcopy(A'),deepcopy(A));
     CTM=fuse_CTM_legs(CTM,U_L,U_D,U_R,U_U);
 
     return CTM, AA_fused, U_L,U_D,U_R,U_U
