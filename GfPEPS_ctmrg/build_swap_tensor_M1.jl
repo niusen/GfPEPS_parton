@@ -14,22 +14,16 @@ M=1;#number of virtual modes per bond
 #each site has 4M virtual fermion modes
 Q=2*M+filling;#total number of physical and virtual fermions on a site; 
 #size of W matrix: (P+4M, Q)
-init_state="Hofstadter_N2_M"*string(M)*".jld";#initialize: nothing
-#init_state=nothing
+#init_state="Hofstadter_N2_M"*string(M)*".jld";#initialize: nothing
+init_state="QWZ_M"*string(M)*".jld";#initialize: nothing
+
 
 
 W=load(init_state)["W"];
 E0=load(init_state)["E0"];
 
-filenm="Tensor_M1_intermediate.jld2";#index order: dummy, P, L,R,D,U, dummy
-#filenm="Tensor_M1.jld2";#index order:  L,D,R,U, P,dummy,dummy,
-
-U_phy=load(filenm)["U_phy"]
-T=load(filenm)["T"]
 
 
-U_phy=load(filenm)["U_phy"]
-T=load(filenm)["T"]
 
 #convention for TensorKit
 A=zeros(2,2,2,2,2,2)*im; #P1,P2,L,R,D,U

@@ -326,10 +326,14 @@ function CTM_ite(Cset, Tset, AA_fused, chi, direction, trun_tol,CTM_ite_info)
 
 
     ###################
-
+    # sM_dense=sort(convert(Array,diag(convert(Array,sM))),rev=true);
+    # sM_dense=sM_dense/sM_dense[1];
+    # println(sM_dense)
     sM=truncate_multiplet(sM,chi,1e-5,trun_tol);
 
-
+    # sM_dense=sort(convert(Array,diag(convert(Array,sM))),rev=true);
+    # sM_dense=sM_dense/sM_dense[1];
+    # println(sM_dense)
     #################
 
 

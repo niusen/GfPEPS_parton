@@ -62,12 +62,14 @@ T=A_set[1];
 
 @tensor T[:]:=T[-1,1,-2]*A_set[2][1,-4,-3];
 U_phy=unitary(fuse(space(T,2)⊗space(T,3)),space(T,2)⊗space(T,3));#fuse the two physical indices
-@tensor T[:]:=T[-1,1,2,-3]*U_phy[-2,1,2];
 
-@tensor T[:]:=T[-1,-2,1]*A_set[3][1,-3,-4];
-@tensor T[:]:=T[-1,-2,1,-3]*A_set[4][1,-5,-4];
-@tensor T[:]:=T[-1,-2,-3,-4,1]*A_set[5][1,-6,-5];
-@tensor T[:]:=T[-1,-2,-3,-4,-5,1]*A_set[6][1,-7,-6];
+@tensor T[:]:=T[-1,-2,-3,1]*A_set[3][1,-4,-5];
+@tensor T[:]:=T[-1,-2,-3,1,-4]*A_set[4][1,-6,-5];
+@tensor T[:]:=T[-1,-2,-3,-4,-5,1]*A_set[5][1,-7,-6];
+@tensor T[:]:=T[-1,-2,-3,-4,-5,-6,1]*A_set[6][1,-8,-7];
+
+@tensor T[:]:=T[-1,1,2,-3,-4,-5,-6,-7]*U_phy[-2,1,2];#this line has problem: if the physical state is odd, the sign is incorrect
+
 #index order: dummy, P, L,R,D,U, dummy
 
 save("Tensor_M1_intermediate.jld2", "T",T,"U_phy",U_phy);
