@@ -30,11 +30,6 @@ end
 
 
 function evaluate_ob(O1, O2, A_fused, AA_fused, CTM, direction, is_odd)
-    O1=deepcopy(O1);
-    O2=deepcopy(O2);
-    A_fused=deepcopy(A_fused);
-    AA_fused=deepcopy(AA_fused);
-    CTM=deepcopy(CTM);
     
     H_term=create_H_term(O1,O2,direction,is_odd);
     AA1p,AA2p=build_double_layer_swap_op(A_fused,A_fused,H_term);
@@ -42,8 +37,8 @@ function evaluate_ob(O1, O2, A_fused, AA_fused, CTM, direction, is_odd)
     if direction=="x"
         norm=ob_2sites_x(CTM,AA_fused,AA_fused);
         ob=ob_2sites_x(CTM,AA1p,AA2p);
-        norm=blocks(norm)[U1Irrep(0)][1];
-        ob=blocks(ob)[U1Irrep(0)][1];
+        norm=blocks(norm)[(Irrep[U₁](0) ⊠ Irrep[SU₂](0))][1];
+        ob=blocks(ob)[(Irrep[U₁](0) ⊠ Irrep[SU₂](0))][1];
 
 
     end
@@ -59,8 +54,8 @@ end
 
 function Hamiltonians(U_phy1,U_phy2)
 
-    Vdummy=ℂ[U1Irrep](-1=>1)';
-    V=ℂ[U1Irrep](0=>1,1=>1)';
+    Vdummy=ℂ[U1Irrep](-1=>1);
+    V=ℂ[U1Irrep](0=>1,1=>1);
 
     Id=[1 0;0 1];
     sm=[0 1;0 0]; sp=[0 0;1 0]; sz=[1 0; 0 -1]; occu=[0 0; 0 1];

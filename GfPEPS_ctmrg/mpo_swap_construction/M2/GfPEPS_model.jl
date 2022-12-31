@@ -59,8 +59,10 @@ end
 
 function Hamiltonians(U_phy1,U_phy2)
 
-    Vdummy=ℂ[U1Irrep](-1=>1)';
-    V=ℂ[U1Irrep](0=>1,1=>1)';
+    Vdummy=ℂ[U1Irrep](-1=>1);
+    V=ℂ[U1Irrep](0=>1,1=>1);
+
+    
 
     Id=[1 0;0 1];
     sm=[0 1;0 0]; sp=[0 0;1 0]; sz=[1 0; 0 -1]; occu=[0 0; 0 1];
@@ -98,30 +100,46 @@ function Hamiltonians(U_phy1,U_phy2)
     CB=TensorMap(CB, Vdummy' ⊗ V ⊗ V ← V ⊗ V);
 
 
+    U=unitary(fuse(space(Ident,1)⊗space(Ident,2)), space(Ident,1)⊗space(Ident,2));
+    @tensor Ident[:]:=Ident[1,2,3,4]*U[-1,1,2]*U'[3,4,-2];
+    @tensor NA[:]:=NA[1,2,3,4]*U[-1,1,2]*U'[3,4,-2];
+    @tensor NB[:]:=NB[1,2,3,4]*U[-1,1,2]*U'[3,4,-2];
+    @tensor NANB[:]:=NANB[1,2,3,4]*U[-1,1,2]*U'[3,4,-2];
+    @tensor CAdag[:]:=CAdag[-1,1,2,3,4]*U[-2,1,2]*U'[3,4,-3];
+    @tensor CBdag[:]:=CBdag[-1,1,2,3,4]*U[-2,1,2]*U'[3,4,-3];
+    @tensor CA[:]:=CA[-1,1,2,3,4]*U[-2,1,2]*U'[3,4,-3];
+    @tensor CB[:]:=CB[-1,1,2,3,4]*U[-2,1,2]*U'[3,4,-3];
 
-    @tensor Ident[:]:=Ident[1,2,4,5]*U_phy1[-1,3,1,2]*U_phy1'[3,4,5,-2];
-    @tensor Ident[:]:=Ident[3,4]*U_phy2[-1,3,1,2,5,6]*U_phy2'[4,1,2,5,6,-2];
 
-    @tensor NA[:]:=NA[1,2,4,5]*U_phy1[-1,3,1,2]*U_phy1'[3,4,5,-2];
-    @tensor NA[:]:=NA[3,4]*U_phy2[-1,3,1,2,5,6]*U_phy2'[4,1,2,5,6,-2];
 
-    @tensor NB[:]:=NB[1,2,4,5]*U_phy1[-1,3,1,2]*U_phy1'[3,4,5,-2];
-    @tensor NB[:]:=NB[3,4]*U_phy2[-1,3,1,2,5,6]*U_phy2'[4,1,2,5,6,-2];
 
-    @tensor NANB[:]:=NANB[1,2,4,5]*U_phy1[-1,3,1,2]*U_phy1'[3,4,5,-2];
-    @tensor NANB[:]:=NANB[3,4]*U_phy2[-1,3,1,2,5,6]*U_phy2'[4,1,2,5,6,-2];
 
-    @tensor CAdag[:]:=CAdag[-1,1,2,4,5]*U_phy1[-2,3,1,2]*U_phy1'[3,4,5,-3];
-    @tensor CAdag[:]:=CAdag[-1,3,4]*U_phy2[-2,3,1,2,5,6]*U_phy2'[4,1,2,5,6,-3];
 
-    @tensor CBdag[:]:=CBdag[-1,1,2,4,5]*U_phy1[-2,3,1,2]*U_phy1'[3,4,5,-3];
-    @tensor CBdag[:]:=CBdag[-1,3,4]*U_phy2[-2,3,1,2,5,6]*U_phy2'[4,1,2,5,6,-3];
+    println(space(Ident))
+    println(space(U_phy1))
+    @tensor Ident[:]:=Ident[4,1]*U_phy1[-1,3,1,6]*U_phy1'[3,4,6,-2];
+    @tensor Ident[:]:=Ident[3,4]*U_phy2[-1,3,1,2]*U_phy2'[4,1,2,-2];
 
-    @tensor CA[:]:=CA[-1,1,2,4,5]*U_phy1[-2,3,1,2]*U_phy1'[3,4,5,-3];
-    @tensor CA[:]:=CA[-1,3,4]*U_phy2[-2,3,1,2,5,6]*U_phy2'[4,1,2,5,6,-3];
+    @tensor NA[:]:=NA[4,1]*U_phy1[-1,3,1,6]*U_phy1'[3,4,6,-2];
+    @tensor NA[:]:=NA[3,4]*U_phy2[-1,3,1,2]*U_phy2'[4,1,2,-2];
 
-    @tensor CB[:]:=CB[-1,1,2,4,5]*U_phy1[-2,3,1,2]*U_phy1'[3,4,5,-3];
-    @tensor CB[:]:=CB[-1,3,4]*U_phy2[-2,3,1,2,5,6]*U_phy2'[4,1,2,5,6,-3];
+    @tensor NB[:]:=NB[4,1]*U_phy1[-1,3,1,6]*U_phy1'[3,4,6,-2];
+    @tensor NB[:]:=NB[3,4]*U_phy2[-1,3,1,2]*U_phy2'[4,1,2,-2];
+
+    @tensor NANB[:]:=NANB[4,1]*U_phy1[-1,3,1,6]*U_phy1'[3,4,6,-2];
+    @tensor NANB[:]:=NANB[3,4]*U_phy2[-1,3,1,2]*U_phy2'[4,1,2,-2];
+
+    @tensor CAdag[:]:=CAdag[-1,4,1]*U_phy1[-2,3,1,6]*U_phy1'[3,4,6,-3];
+    @tensor CAdag[:]:=CAdag[-1,3,4]*U_phy2[-2,3,1,2]*U_phy2'[4,1,2,-3];
+
+    @tensor CBdag[:]:=CBdag[-1,4,1]*U_phy1[-2,3,1,6]*U_phy1'[3,4,6,-3];
+    @tensor CBdag[:]:=CBdag[-1,3,4]*U_phy2[-2,3,1,2]*U_phy2'[4,1,2,-3];
+
+    @tensor CA[:]:=CA[-1,4,1]*U_phy1[-2,3,1,6]*U_phy1'[3,4,6,-3];
+    @tensor CA[:]:=CA[-1,3,4]*U_phy2[-2,3,1,2]*U_phy2'[4,1,2,-3];
+
+    @tensor CB[:]:=CB[-1,4,1]*U_phy1[-2,3,1,6]*U_phy1'[3,4,6,-3];
+    @tensor CB[:]:=CB[-1,3,4]*U_phy2[-2,3,1,2]*U_phy2'[4,1,2,-3];
 
 
     return Ident, NA, NB, NANB, CAdag, CA, CBdag, CB 

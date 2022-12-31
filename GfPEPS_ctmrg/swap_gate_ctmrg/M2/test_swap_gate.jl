@@ -41,6 +41,12 @@ U_phy1=unitary(fuse(space(A,1)⊗space(A,2)⊗space(A,3)), space(A,1)⊗space(A,
 @tensor A[:]:=A[1,2,3,-2,-3,-4,-5,-6,-7,-8,-9]*U_phy1[-1,1,2,3]; # P,L,R,D,U
 
 
+
+U=unitary(Rep[U₁](0=>1, 1=>2, 2=>1)', space(A,2)⊗space(A,3));
+@tensor A2[:]:=A[-1,1,2,3,4,5,6,7,8]*U[-2,1,2]*U[-3,3,4]*U[-4,5,6]*U[-5,7,8];
+
+
+
 #Add bond:both parity gate and bond operator
 bond=zeros(1,2,2); bond[1,1,2]=1;bond[1,2,1]=1; bond=TensorMap(bond, ℂ[U1Irrep](1=>1)' ← V' ⊗ V');
 gate=parity_gate(A,4); @tensor A[:]:=A[-1,-2,-3,1,-5,-6,-7,-8,-9]*gate[-4,1];
@@ -52,11 +58,20 @@ U_phy2=unitary(fuse(space(A,1)⊗space(A,10)⊗space(A,11)⊗space(A,12)⊗space
 #P,L,R,D,U
 
 
+@tensor bond_gate[:]:=bond[-1,-3,1]*bond[-2,-4,-6]*gate[1,-5];
+
+
+
+@tensor A22[:]:=A[-1,1,2,3,4,5,6,7,8]*U[-2,1,2]*U'[3,4,-3]*U'[5,6,-4]*U[-5,7,8];
+
 ###################
 #|><R1R2|=|><|R2R1
 gate=swap_gate(A,4,5); @tensor A[:]:=A[-1,-2,-3,1,2,-6,-7,-8,-9]*gate[-4,-5,1,2];  
 gate=swap_gate(A,6,7); @tensor A[:]:=A[-1,-2,-3,-4,-5,1,2,-8,-9]*gate[-6,-7,1,2];  
 ###################
+
+@tensor A222[:]:=A[-1,1,2,3,4,5,6,7,8]*U[-2,1,2]*U'[3,4,-3]*U'[5,6,-4]*U[-5,7,8];
+
 
 
 #group virtual legs on the same legs
