@@ -11,7 +11,7 @@ include("D:\\My Documents\\Code\\Julia_codes\\Tensor network\\GfPEPS_parton\\par
 
 
 
-chi=100
+chi=20
 tol=1e-6
 
 

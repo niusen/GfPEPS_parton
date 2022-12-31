@@ -99,4 +99,29 @@ Vdummy=GradedSpace[Irrep[U₁]⊠Irrep[SU₂]]((-2,0)=>1);
 bond_gate=TensorMap(bond_m,Vdummy ⊗ V ← V');
 bond_gate=permute(bond_gate,(1,2,3,));
 
-save("swap_gate_Tensor_M2.jld2", "psi_G",psi_G, "bond",bond,"bond_gate",bond_gate);
+#spin-spin correlation operator 
+SS=zeros(2,2,2,2,2,2,2,2)*im;#Aup,Adown, Bup,Bdown
+SS[2,1,1,2,1,2,2,1]=1/2;#spsm
+SS[1,2,2,1,2,1,1,2]=1/2;#smmsp
+SS[2,1,2,1,2,1,2,1]=1/4;#szsz
+SS[2,1,1,2,2,1,1,2]=-1/4;#szsz
+SS[1,2,2,1,1,2,2,1]=-1/4;#szsz
+SS[1,2,1,2,1,2,1,2]=1/4;#szsz
+SS=reshape(SS,4,4,4,4);
+@tensor SS[:]:=SS[1,2,3,4]*Pm[-1,1]*Pm[-2,2]*Pm[-3,3]*Pm[-4,4];
+SS_op_F=TensorMap(SS, V ⊗ V ← V ⊗ V);
+
+
+#gutzwiller projector
+P=zeros(2,2,2)*im;
+P[1,2,1]=1;
+P[2,1,2]=1;
+P=reshape(P,2,4);
+@tensor P[:]:=P[-1,1]*Pm[-2,1];
+Vspin=GradedSpace[Irrep[U₁]⊠Irrep[SU₂]]((1,1/2)=>1);
+P_G=TensorMap(P, Vspin  ←  V);
+
+@tensor SS_op_S[:]:=P_G[-1,1]*P_G[-2,2]SS_op_F[1,2,3,4]*P_G'[3,-3]*P_G'[4,-4];
+SS_op_S=permute(SS_op_S,(1,2,),(3,4,))
+
+save("swap_gate_Tensor_M2.jld2", "psi_G",psi_G, "bond",bond,"bond_gate",bond_gate, "SS_op_F",SS_op_F, "SS_op_S",SS_op_S, "P_G",P_G);

@@ -2,6 +2,7 @@ using LinearAlgebra
 using TensorKit
 using JSON
 using HDF5, JLD2, MAT
+using InteractiveUtils
 cd("D:\\My Documents\\Code\\Julia_codes\\Tensor network\\GfPEPS_parton\\parton_ctmrg\\swap_gate_ctmrg\\M2")
 
 include("parton_CTMRG.jl")
