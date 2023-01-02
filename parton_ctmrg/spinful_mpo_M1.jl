@@ -16,8 +16,8 @@ M=1;#number of virtual modes per bond
 #each site has 4M virtual fermion modes
 Q=2*M+filling;#total number of physical and virtual fermions on a site; 
 #size of W matrix: (P+4M, Q)
-#init_state="Hofstadter_N2_M"*string(M)*".jld";#initialize: nothing
-init_state="QWZ_M"*string(M)*".jld";#initialize: nothing
+init_state="Hofstadter_N2_M"*string(M)*".jld";#initialize: nothing
+#init_state="QWZ_M"*string(M)*".jld";#initialize: nothing
 
 W=load(init_state)["W"];
 E0=load(init_state)["E0"];
@@ -110,7 +110,7 @@ SS[1,2,2,1,1,2,2,1]=-1/4;#szsz
 SS[1,2,1,2,1,2,1,2]=1/4;#szsz
 SS=reshape(SS,4,4,4,4);
 @tensor SS[:]:=SS[1,2,3,4]*Pm[-1,1]*Pm[-2,2]*Pm[-3,3]*Pm[-4,4];
-SS_op_F=TensorMap(SS, V ⊗ V ← V ⊗ V);
+SS_op_F=TensorMap(SS, V' ⊗ V' ← V' ⊗ V');
 
 
 #gutzwiller projector
@@ -120,7 +120,7 @@ P[2,1,2]=1;
 P=reshape(P,2,4);
 @tensor P[:]:=P[-1,1]*Pm[-2,1];
 Vspin=GradedSpace[Irrep[U₁]⊠Irrep[SU₂]]((1,1/2)=>1);
-P_G=TensorMap(P, Vspin  ←  V);
+P_G=TensorMap(P, Vspin'  ←  V');
 
 @tensor SS_op_S[:]:=P_G[-1,1]*P_G[-2,2]SS_op_F[1,2,3,4]*P_G'[3,-3]*P_G'[4,-4];
 SS_op_S=permute(SS_op_S,(1,2,),(3,4,))
