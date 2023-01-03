@@ -315,50 +315,16 @@ function solve_correl_length(n_values,AA_fused,CTM,direction)
 end
 
 
-function cal_correl(M,SS_op,A_fused, AA_fused, chi,CTM, distance)
+function cal_correl(M, AA_fused,AA_SS,AA_SAL,AA_SBL,AA_SAR,AA_SBR, chi,CTM, distance)
     #M: number of virtual modes 
-    println("Calculate correlations:");flush(stdout);
-
-    #spin-spin operator act on a single site
-    um,sm,vm=tsvd(permute(SS_op,(1,3,),(2,4,)));
-    vm=sm*vm;vm=permute(vm,(2,3,),(1,));
-
-    @tensor SS_cell[:]:=SS_op[1,2,4,5]*U_phy1[-1,3,1,2]*U_phy1'[3,4,5,-2];#spin-spin operator inside a unitcell
-    @tensor SA_left[:]:=um[1,4,-3]*U_phy1[-1,3,1,2]*U_phy1'[3,4,2,-2];
-    @tensor SB_left[:]:=um[2,5,-3]*U_phy1[-1,3,1,2]*U_phy1'[3,1,5,-2];
-    @tensor SA_right[:]:=vm[1,4,-3]*U_phy1[-1,3,1,2]*U_phy1'[3,4,2,-2];
-    @tensor SB_right[:]:=vm[2,5,-3]*U_phy1[-1,3,1,2]*U_phy1'[3,1,5,-2];
-
-    if M==1        
-        @tensor SS_cell[:]:=SS_cell[3,4]*U_phy2[-1,3,1,2]*U_phy2'[4,1,2,-2];
-        @tensor SA_left[:]:=SA_left[3,4,-3]*U_phy2[-1,3,1,2]*U_phy2'[4,1,2,-2];
-        @tensor SB_left[:]:=SB_left[3,4,-3]*U_phy2[-1,3,1,2]*U_phy2'[4,1,2,-2];
-        @tensor SA_right[:]:=SA_right[3,4,-3]*U_phy2[-1,3,1,2]*U_phy2'[4,1,2,-2];
-        @tensor SB_right[:]:=SB_right[3,4,-3]*U_phy2[-1,3,1,2]*U_phy2'[4,1,2,-2];
-    elseif M==2
-        @tensor SS_cell[:]:=SS_cell[3,4]*U_phy2[-1,3,1,2,5,6]*U_phy2'[4,1,2,5,6,-2];
-        @tensor SA_left[:]:=SA_left[3,4,-3]*U_phy2[-1,3,1,2,5,6]*U_phy2'[4,1,2,5,6,-2];
-        @tensor SB_left[:]:=SB_left[3,4,-3]*U_phy2[-1,3,1,2,5,6]*U_phy2'[4,1,2,5,6,-2];
-        @tensor SA_right[:]:=SA_right[3,4,-3]*U_phy2[-1,3,1,2,5,6]*U_phy2'[4,1,2,5,6,-2];
-        @tensor SB_right[:]:=SB_right[3,4,-3]*U_phy2[-1,3,1,2,5,6]*U_phy2'[4,1,2,5,6,-2];
-    end
-
+    
 
 
     #single-unitcell correlations
     norm=ob_1site_closed(CTM,AA_fused);
-    AA_SS=build_double_layer_swap_op(A_fused,SS_cell,false);
+    
     SS_cell_ob=ob_1site_closed(CTM,AA_SS);
     SS_cell_ob=SS_cell_ob/norm;
-
-    AA_SAL=build_double_layer_swap_op(A_fused,SA_left,true);
-    AA_SBL=build_double_layer_swap_op(A_fused,SB_left,true);
-    AA_SAR=build_double_layer_swap_op(A_fused,SA_right,true);
-    AA_SBR=build_double_layer_swap_op(A_fused,SB_right,true);
-
-
-    
-
 
     
     norms=evaluate_correl_spinspin("x", AA_fused, AA_fused, AA_fused, CTM, "dimerdimer", 10);
