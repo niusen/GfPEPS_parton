@@ -23,6 +23,9 @@ CTM_trun_tol=1e-10;
 
 
 data=load("swap_gate_Tensor_M"*string(M)*".jld2")
+
+P_G=data["P_G"];
+
 psi_G=data["psi_G"];   #P1,P2,L,R,D,U
 M1=psi_G[1];
 M2=psi_G[2];
