@@ -69,53 +69,57 @@ A_origin=deepcopy(A);
 
 
 y_anti_pbc=true;
-boundary_phase_y=0;
+boundary_phase_y=0.07;
 
 
 #########################################
 A1=deepcopy(A_origin);#L1,U1,P1,R1,D1
 A2=deepcopy(A_origin);#L2,U2,P2,R2,D2
+A3=deepcopy(A_origin);#L3,U3,P3,R3,D3
 
 if y_anti_pbc
-    gauge_gate1=gauge_gate(A1,2,pi*boundary_phase_y);
+    gauge_gate1=gauge_gate(A1,2,2*pi/3*boundary_phase_y);
     @tensor A1[:]:=A1[-1,1,-3,-4,-5]*gauge_gate1[-2,1];
-    gauge_gate2=gauge_gate(A2,2,pi*boundary_phase_y);
+    gauge_gate2=gauge_gate(A2,2,2*pi/3*boundary_phase_y);
     @tensor A2[:]:=A2[-1,1,-3,-4,-5]*gauge_gate2[-2,1];
-
+    gauge_gate3=gauge_gate(A3,2,2*pi/3*boundary_phase_y);
+    @tensor A3[:]:=A3[-1,1,-3,-4,-5]*gauge_gate3[-2,1];
 end
 
-A2=permute_neighbour_ind(A2,1,2,5);#U2,L2,P2,R2,D2
+U=unitary(fuse(space(A1,1)⊗space(A1,1)⊗space(A1,1)), space(A1,1)⊗space(A1,1)⊗space(A1,1));
+@tensor A1A2A3[:]:=A1[-1,-10,-4,-7,2]*A2[-2,2,-5,-8,3]*A3[-3,3,-6,-9,-11];#L3,L2,L1,P1,P2,P3,R1,R2,R3,U1,D3
+@tensor A1A2A3[:]:=A1A2A3[1,2,3,-2,-3,-4,-5,-6,-7,-8,-9]*U[-1,1,2,3];#L,P1,P2,P3,R1,R2,R3,U1,D3
 
-@tensor A1A2[:]:=A1[-1,-2,-3,-4,1]*A2[1,-5,-6,-7,-8];#L1,U1,P1,R1,L2,P2,R2,D2
-A1A2=permute_neighbour_ind(A1A2,2,3,8);#L1,P1,U1,R1,L2,P2,R2,D2
-A1A2=permute_neighbour_ind(A1A2,3,4,8);#L1,P1,R1,U1,L2,P2,R2,D2
-A1A2=permute_neighbour_ind(A1A2,4,5,8);#L1,P1,R1,L2,U1,P2,R2,D2
-A1A2=permute_neighbour_ind(A1A2,5,6,8);#L1,P1,R1,L2,P2,U1,R2,D2
-A1A2=permute_neighbour_ind(A1A2,6,7,8);#L1,P1,R1,L2,P2,R2,U1,D2
-A1A2=permute_neighbour_ind(A1A2,7,8,8);#L1,P1,R1,L2,P2,R2,D2,U1
-@tensor A1A2[:]:=A1A2[-1,-2,-3,-4,-5,-6,1,1];#L1,P1,R1,L2,P2,R2
-#########################################
+gate=swap_gate(A1A2A3,1,8); @tensor A1A2A3[:]:=A1A2A3[1,-2,-3,-4,-5,-6,-7,2,-9]*gate[-1,-8,1,2];#L,U1
 
-A1A2=permute_neighbour_ind(A1A2,3,4,6);#L1,P1,L2,R1,P2,R2
-A1A2=permute_neighbour_ind(A1A2,2,3,6);#L1,L2,P1,R1,P2,R2
-A1A2=permute_neighbour_ind(A1A2,4,5,6);#L1,L2,P1,P2,R1,R2
+gate=parity_gate(A1A2A3,8); @tensor A1A2A3[:]:=A1A2A3[-1,-2,-3,-4,-5,-6,-7,1,-9]*gate[-8,1];#U1
+# gate=swap_gate(A1A2A3,2,8); @tensor A1A2A3[:]:=A1A2A3[-1,1,-3,-4,-5,-6,-7,2,-9]*gate[-2,-8,1,2];#P1,U1
+# gate=swap_gate(A1A2A3,3,8); @tensor A1A2A3[:]:=A1A2A3[-1,-2,1,-4,-5,-6,-7,2,-9]*gate[-3,-8,1,2];#P2,U1
+# gate=swap_gate(A1A2A3,4,8); @tensor A1A2A3[:]:=A1A2A3[-1,-2,-3,1,-5,-6,-7,2,-9]*gate[-4,-8,1,2];#P3,U1
+# gate=swap_gate(A1A2A3,5,8); @tensor A1A2A3[:]:=A1A2A3[-1,-2,-3,-4,1,-6,-7,2,-9]*gate[-5,-8,1,2];#R1,U1
+# gate=swap_gate(A1A2A3,6,8); @tensor A1A2A3[:]:=A1A2A3[-1,-2,-3,-4,-5,1,-7,2,-9]*gate[-6,-8,1,2];#R2,U1
+# gate=swap_gate(A1A2A3,7,8); @tensor A1A2A3[:]:=A1A2A3[-1,-2,-3,-4,-5,-6,1,2,-9]*gate[-7,-8,1,2];#R3,U1
+gate=swap_gate(A1A2A3,3,5); @tensor A1A2A3[:]:=A1A2A3[-1,-2,1,-4,2,-6,-7,-8,-9]*gate[-3,-5,1,2];#P2,R1
+gate=swap_gate(A1A2A3,4,5); @tensor A1A2A3[:]:=A1A2A3[-1,-2,-3,1,2,-6,-7,-8,-9]*gate[-4,-5,1,2];#P3,R1
+gate=swap_gate(A1A2A3,4,6); @tensor A1A2A3[:]:=A1A2A3[-1,-2,-3,1,-5,2,-7,-8,-9]*gate[-4,-6,1,2];#P3,R2
 
-U_phy=unitary(fuse(space(A1A2,3)⊗space(A1A2,4)),space(A1A2,3)⊗space(A1A2,4));
-@tensor A1A2[:]:=A1A2[-1,-2,1,2,-4,-5]*U_phy[-3,1,2];#L1,L2,P,R1,R2
 
-###############
-#the below line seems to be not necessary???????
-gate=swap_gate(A1A2,4,5); @tensor A1A2[:]:=A1A2[-1,-2,-3,1,2]*gate[-4,-5,1,2]; 
-###############
-U=unitary(fuse(space(A1A2,1)⊗space(A1A2,2)),space(A1A2,1)⊗space(A1A2,2));
-@tensor A1A2[:]:=A1A2[1,2,-2,3,4]*U[-1,1,2]*U'[3,4,-3];
+@tensor A1A2A3[:]:=A1A2A3[-1,-2,-3,-4,2,3,4,1,1]*U'[2,3,4,-5];#L,P1,P2,P3,R
 
-@tensor AA[:]:=A1A2'[-1,1,-3]*A1A2[-2,1,-4];
+
+
+Up=unitary(fuse(space(A1A2A3,2)⊗space(A1A2A3,3)⊗space(A1A2A3,4)), space(A1A2A3,2)⊗space(A1A2A3,3)⊗space(A1A2A3,4));
+@tensor A1A2A3[:]:=A1A2A3[-1,1,2,3,-3]*Up[-2,1,2,3];#L,P,R
+
+
+
+@tensor AA[:]:=A1A2A3'[-1,1,-3]*A1A2A3[-2,1,-4];#L',L,R',R
+
 
 
 
 eu,ev=eig(AA,(1,2,),(3,4,))
-println(diag(convert(Array,eu)))
+
 
 @assert norm(ev*eu*inv(ev)-permute(AA,(1,2,),(3,4,)))/norm(AA)<1e-12;
 pp=zeros(1,dim(space(eu,1)));
@@ -126,10 +130,13 @@ P=TensorMap(pp,Rep[U₁](0=>1),space(eu,1));
 
 # @tensor AA[:]:=AA[1,2,3,4]*U[-1,1,2]*U'[3,4,-2];
 
-VL=permute(ev*P',(2,1,),(3,));#R,R'
-VR=P*inv(ev);#L',L
+VR=ev*P';#L',L,dummy
 
-@tensor H[:]:=VL[-1,1,2]*VR[2,1,-2];
+VR=permute(VR,(2,1,),(3,));#L,L',dummy
+VL=P*inv(ev);#dummy,R',R
+
+
+@tensor H[:]:=VR[-1,1,2]*VL[2,1,-2];
 H=convert(Array,H);
 eu,ev=eigen(H);
 println(eu)

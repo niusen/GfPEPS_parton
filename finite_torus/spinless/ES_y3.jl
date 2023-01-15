@@ -69,7 +69,7 @@ A_origin=deepcopy(A);
 
 
 y_anti_pbc=true;
-boundary_phase_y=0.3;
+boundary_phase_y=0.0;
 
 
 #########################################
@@ -112,6 +112,11 @@ A3=permute_neighbour_ind(A3,3,4,5);#U3,L3,R3,P3,D3
 A3=permute_neighbour_ind(A3,2,3,5);#U3,R3,L3,P3,D3
 
 @tensor A1A2A3[:]:=A1A2[-1,-2,-3,-4,-5,-6,1]*A3[1,-7,-8,-9,-10];#L1,L2,P,U1,R1,R2,R3,L3,P3,D3
+
+
+
+
+
 U=unitary(fuse(space(A1A2A3,5)⊗space(A1A2A3,6)⊗space(A1A2A3,7)), space(A1A2A3,5)⊗space(A1A2A3,6)⊗space(A1A2A3,7));
 @tensor A1A2A3[:]:=A1A2A3[-1,-2,-3,-4,1,2,3,-6,-7,-8]*U[-5,1,2,3];#L1,L2,P,U1,R,L3,P3,D3
 
@@ -125,6 +130,14 @@ A1A2A3=permute_neighbour_ind(A1A2A3,7,8,8);#L1,L2,P,R,L3,P3,D3,U1
 A1A2A3=permute_neighbour_ind(A1A2A3,4,5,6);#L1,L2,P,L3,R,P3
 A1A2A3=permute_neighbour_ind(A1A2A3,3,4,6);#L1,L2,L3,P,R,P3
 A1A2A3=permute_neighbour_ind(A1A2A3,5,6,6);#L1,L2,L3,P,P3,R
+
+
+##################
+A1A2A3=permute_neighbour_ind(A1A2A3,2,3,6);#L1,L3,L2,P,P3,R
+A1A2A3=permute_neighbour_ind(A1A2A3,1,2,6);#L3,L1,L2,P,P3,R
+A1A2A3=permute_neighbour_ind(A1A2A3,2,3,6);#L3,L2,L1,P,P3,R
+A1A2A3=permute(A1A2A3,(3,2,1,4,5,6,))
+##################
 
 @tensor A1A2A3[:]:=A1A2A3[1,2,3,-2,-3,-4]*U'[1,2,3,-1];#L,P,P3,R
 
@@ -151,10 +164,17 @@ P=TensorMap(pp,Rep[U₁](0=>1),space(eu,1));
 
 # @tensor AA[:]:=AA[1,2,3,4]*U[-1,1,2]*U'[3,4,-2];
 
-VL=permute(ev*P',(2,1,),(3,));#R,R'
-VR=P*inv(ev);#L',L
+VR=ev*P';#L',L,dummy
+VR_b=deepcopy(permute(VR,(1,2,3,)));#L',L,dummy
 
-@tensor H[:]:=VL[-1,1,2]*VR[2,1,-2];
+VR=permute(VR,(2,1,),(3,));#L,L',dummy
+VL=P*inv(ev);#dummy,R',R
+VL_b=deepcopy(VL);
+VL_b=VL_b/norm(VL_b);
+@tensor VL_b[:]:=VL_b[-1,1,2]*U[1,-2,-3,-4]*U'[-5,-6,-7,2];#dummy,R1',R2',R3',R1,R2,R3
+
+
+@tensor H[:]:=VR[-1,1,2]*VL[2,1,-2];
 H=convert(Array,H);
 eu,ev=eigen(H);
 println(eu)
