@@ -543,12 +543,14 @@ eu=eu/sum(eu)
 
 
 
-# ev=permute(ev,(1,2,3,));#L1',L2',dummy
-# ev_translation=VL=permute_neighbour_ind(ev',1,2,3);#L2',L1',dummy
+ev=permute(ev,(1,2,3,4,));#L1',L2',L3',dummy
+ev_translation=permute_neighbour_ind(deepcopy(ev'),1,2,4);#L2',L1',L3',dummy
+ev_translation=permute_neighbour_ind(deepcopy(ev_translation),2,3,4);#L2',L3',L1',dummy
+#ev_translation=permute(ev',(2,3,1,4,));#L1',L2',L3',dummy
 
-# @tensor k_phase[:]:=ev_translation[1,2,-1]*ev[1,2,-3];
-# k_phase=convert(Array,k_phase);
-# @assert norm(diagm(diag(k_phase))-k_phase)/norm(k_phase)<1e-10;
+@tensor k_phase[:]:=ev_translation[1,2,3,-1]*ev[1,2,3,-2];
+k_phase=convert(Array,k_phase);
+@assert norm(diagm(diag(k_phase))-k_phase)/norm(k_phase)<1e-10;
 
 
 
