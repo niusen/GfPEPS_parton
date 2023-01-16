@@ -12,6 +12,25 @@ function projector_virtual(V)
         M[1,2]=1;
         T=TensorMap(M,Rep[U₁](1=>1),V);
         P_odd[1]=T;
+    elseif V==Rep[U₁](0=>1, -1=>2, -2=>1)
+        P_odd=Vector(undef,1);
+        P_even=Vector(undef,2);
+
+        M=zeros(1,4)*im;
+        M[1,1]=1;
+        T=TensorMap(M,Rep[U₁](0=>1),V);
+        P_even[1]=T;
+
+        M=zeros(1,4)*im;
+        M[1,4]=1;
+        T=TensorMap(M,Rep[U₁](-2=>1),V);
+        P_even[2]=T;
+
+        M=zeros(2,4)*im;
+        M[1,2]=1;
+        M[2,3]=1;
+        T=TensorMap(M,Rep[U₁](-1=>2),V);
+        P_odd[1]=T;
 
     end
 
