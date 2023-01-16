@@ -221,32 +221,45 @@ function M_vr(l_Vodd,l_Veven,vr0)
         for cc2=1:l_Vodd
             for parity_P2=0:1
                 for parity_P3=0:1
-                    vr_temp=deepcopy(vr0);#L1,L2,L3,dummy
-                    AA1_temp=deepcopy(AA1_Vodd_Vodd[cc1,cc2]);
-                    if parity_P2==1
-                        AA2_temp=deepcopy(AA2_Phyodd);
-                    elseif parity_P2==0
-                        AA2_temp=deepcopy(AA2_Phyeven);
+                    for parity_P4=0:1
+                        vr_temp=deepcopy(vr0);#L1,L2,L3,dummy
+                        AA1_temp=deepcopy(AA1_Vodd_Vodd[cc1,cc2]);
+                        if parity_P2==1
+                            AA2_temp=deepcopy(AA2_Phyodd);
+                        elseif parity_P2==0
+                            AA2_temp=deepcopy(AA2_Phyeven);
+                        end
+                        if parity_P3==1
+                            AA3_temp=deepcopy(AA3_Phyodd);
+                        elseif parity_P3==0
+                            AA3_temp=deepcopy(AA3_Phyeven);
+                        end
+                        if parity_P4==1
+                            AA4_temp=deepcopy(AA4_Phyodd_Vodd_Vodd[cc1,cc2]);
+                        elseif parity_P4==0
+                            AA4_temp=deepcopy(AA4_Phyeven_Vodd_Vodd[cc1,cc2]);
+                        end
+                        gate=parity_gate(AA1_temp,4); @tensor AA1_temp[:]:=AA1_temp[-1,-2,-3,1]*gate[-4,1];#sign of U1,U1'
+                        if parity_P2==1
+                            gate=parity_gate(AA1_temp,3); @tensor AA1_temp[:]:=AA1_temp[-1,-2,1,-4]*gate[-3,1];#sign P2*(R1+R1')
+                        end
+                        if parity_P3==1
+                            gate=parity_gate(AA1_temp,3); @tensor AA1_temp[:]:=AA1_temp[-1,-2,1,-4]*gate[-3,1];#sign P3*(R1+R1')
+                            gate=parity_gate(AA2_temp,3); @tensor AA2_temp[:]:=AA2_temp[-1,-2,1,-4]*gate[-3,1];#sign P3*(R2+R2')
+                        end
+                        if parity_P4==1
+                            gate=parity_gate(AA1_temp,3); @tensor AA1_temp[:]:=AA1_temp[-1,-2,1,-4]*gate[-3,1];#sign P4*(R1+R1'+R2+R2'+R3+R3')
+                            gate=parity_gate(AA2_temp,3); @tensor AA2_temp[:]:=AA2_temp[-1,-2,1,-4]*gate[-3,1];#sign P4*(R1+R1'+R2+R2'+R3+R3')
+                            gate=parity_gate(AA3_temp,3); @tensor AA3_temp[:]:=AA3_temp[-1,-2,1,-4]*gate[-3,1];#sign P4*(R1+R1'+R2+R2'+R3+R3')
+                        end
+                        gate=parity_gate(AA1_temp,1); #sign U1*(L1+L2+L3+L4) + U1'*(L1'+L2'+L3'+L4') 
+                        @tensor AA1_temp[:]:=AA1_temp[1,-2,-3,-4]*gate[-1,1];
+                        @tensor AA2_temp[:]:=AA2_temp[1,-2,-3,-4]*gate[-1,1];
+                        @tensor AA3_temp[:]:=AA3_temp[1,-2,-3,-4]*gate[-1,1];
+                        @tensor AA4_temp[:]:=AA4_temp[1,-2,-3,-4]*gate[-1,1];
+                        @tensor vr_temp[:]:=AA1_temp[-1,2,1,8]*AA2_temp[-2,4,3,2]*AA3_temp[-3,6,5,4]*AA4_temp[-4,8,7,6]*vr_temp[1,3,5,7,-5];
+                        vr=vr+vr_temp;
                     end
-                    if parity_P3==1
-                        AA3_temp=deepcopy(AA3_Phyodd_Vodd_Vodd[cc1,cc2]);
-                    elseif parity_P3==0
-                        AA3_temp=deepcopy(AA3_Phyeven_Vodd_Vodd[cc1,cc2]);
-                    end
-                    gate=parity_gate(AA1_temp,4); @tensor AA1_temp[:]:=AA1_temp[-1,-2,-3,1]*gate[-4,1];#sign of U1,U1'
-                    if parity_P2==1
-                        gate=parity_gate(AA1_temp,3); @tensor AA1_temp[:]:=AA1_temp[-1,-2,1,-4]*gate[-3,1];#sign P2*(R1+R1')
-                    end
-                    if parity_P3==1
-                        gate=parity_gate(AA1_temp,3); @tensor AA1_temp[:]:=AA1_temp[-1,-2,1,-4]*gate[-3,1];#sign P3*(R1+R1')
-                        gate=parity_gate(AA2_temp,3); @tensor AA2_temp[:]:=AA2_temp[-1,-2,1,-4]*gate[-3,1];#sign P3*(R2+R2')
-                    end
-                    gate=parity_gate(AA1_temp,1); #sign U1*(L1+L2+L3) + U1'*(L1'+L2'+L3') 
-                    @tensor AA1_temp[:]:=AA1_temp[1,-2,-3,-4]*gate[-1,1];
-                    @tensor AA2_temp[:]:=AA2_temp[1,-2,-3,-4]*gate[-1,1];
-                    @tensor AA3_temp[:]:=AA3_temp[1,-2,-3,-4]*gate[-1,1];
-                    @tensor vr_temp[:]:=AA1_temp[-1,2,1,6]*AA2_temp[-2,4,3,2]*AA3_temp[-3,6,5,4]*vr_temp[1,3,5,-4];
-                    vr=vr+vr_temp;
                 end
             end
         end
@@ -257,32 +270,45 @@ function M_vr(l_Vodd,l_Veven,vr0)
         for cc2=1:l_Veven
             for parity_P2=0:1
                 for parity_P3=0:1
-                    vr_temp=deepcopy(vr0);#L1,L2,L3,dummy
-                    AA1_temp=deepcopy(AA1_Vodd_Veven[cc1,cc2]);
-                    if parity_P2==1
-                        AA2_temp=deepcopy(AA2_Phyodd);
-                    elseif parity_P2==0
-                        AA2_temp=deepcopy(AA2_Phyeven);
+                    for parity_P4=0:1
+                        vr_temp=deepcopy(vr0);#L1,L2,L3,dummy
+                        AA1_temp=deepcopy(AA1_Vodd_Veven[cc1,cc2]);
+                        if parity_P2==1
+                            AA2_temp=deepcopy(AA2_Phyodd);
+                        elseif parity_P2==0
+                            AA2_temp=deepcopy(AA2_Phyeven);
+                        end
+                        if parity_P3==1
+                            AA3_temp=deepcopy(AA3_Phyodd);
+                        elseif parity_P3==0
+                            AA3_temp=deepcopy(AA3_Phyeven);
+                        end
+                        if parity_P4==1
+                            AA4_temp=deepcopy(AA4_Phyodd_Vodd_Veven[cc1,cc2]);
+                        elseif parity_P4==0
+                            AA4_temp=deepcopy(AA4_Phyeven_Vodd_Veven[cc1,cc2]);
+                        end
+                        gate=parity_gate(AA1_temp,4); @tensor AA1_temp[:]:=AA1_temp[-1,-2,-3,1]*gate[-4,1];#sign of U1,U1'
+                        if parity_P2==1
+                            gate=parity_gate(AA1_temp,3); @tensor AA1_temp[:]:=AA1_temp[-1,-2,1,-4]*gate[-3,1];#sign P2*(R1+R1')
+                        end
+                        if parity_P3==1
+                            gate=parity_gate(AA1_temp,3); @tensor AA1_temp[:]:=AA1_temp[-1,-2,1,-4]*gate[-3,1];#sign P3*(R1+R1')
+                            gate=parity_gate(AA2_temp,3); @tensor AA2_temp[:]:=AA2_temp[-1,-2,1,-4]*gate[-3,1];#sign P3*(R2+R2')
+                        end
+                        if parity_P4==1
+                            gate=parity_gate(AA1_temp,3); @tensor AA1_temp[:]:=AA1_temp[-1,-2,1,-4]*gate[-3,1];#sign P4*(R1+R1'+R2+R2'+R3+R3')
+                            gate=parity_gate(AA2_temp,3); @tensor AA2_temp[:]:=AA2_temp[-1,-2,1,-4]*gate[-3,1];#sign P4*(R1+R1'+R2+R2'+R3+R3')
+                            gate=parity_gate(AA3_temp,3); @tensor AA3_temp[:]:=AA3_temp[-1,-2,1,-4]*gate[-3,1];#sign P4*(R1+R1'+R2+R2'+R3+R3')
+                        end
+                        gate=deepcopy(gate_upper); #sign U1*(L1+L2+L3+L4) + U1'*(L1'+L2'+L3'+L4')                  
+                        @tensor AA1_temp[:]:=AA1_temp[1,-2,-3,-4]*gate[-1,1];
+                        @tensor AA2_temp[:]:=AA2_temp[1,-2,-3,-4]*gate[-1,1];
+                        @tensor AA3_temp[:]:=AA3_temp[1,-2,-3,-4]*gate[-1,1];
+                        @tensor AA4_temp[:]:=AA4_temp[1,-2,-3,-4]*gate[-1,1];
+                        @tensor vr_temp[:]:=AA1_temp[-1,2,1,8]*AA2_temp[-2,4,3,2]*AA3_temp[-3,6,5,4]*AA4_temp[-4,8,7,6]*vr_temp[1,3,5,7,-5];
+                        vr=vr+vr_temp;
                     end
-                    if parity_P3==1
-                        AA3_temp=deepcopy(AA3_Phyodd_Vodd_Veven[cc1,cc2]);
-                    elseif parity_P3==0
-                        AA3_temp=deepcopy(AA3_Phyeven_Vodd_Veven[cc1,cc2]);
-                    end
-                    gate=parity_gate(AA1_temp,4); @tensor AA1_temp[:]:=AA1_temp[-1,-2,-3,1]*gate[-4,1];#sign of U1,U1'
-                    if parity_P2==1
-                        gate=parity_gate(AA1_temp,3); @tensor AA1_temp[:]:=AA1_temp[-1,-2,1,-4]*gate[-3,1];#sign P2*(R1+R1')
-                    end
-                    if parity_P3==1
-                        gate=parity_gate(AA1_temp,3); @tensor AA1_temp[:]:=AA1_temp[-1,-2,1,-4]*gate[-3,1];#sign P3*(R1+R1')
-                        gate=parity_gate(AA2_temp,3); @tensor AA2_temp[:]:=AA2_temp[-1,-2,1,-4]*gate[-3,1];#sign P3*(R2+R2')
-                    end
-                    gate=deepcopy(gate_upper); #sign U1*(L1+L2+L3) + U1'*(L1'+L2'+L3')                    
-                    @tensor AA1_temp[:]:=AA1_temp[1,-2,-3,-4]*gate[-1,1];
-                    @tensor AA2_temp[:]:=AA2_temp[1,-2,-3,-4]*gate[-1,1];
-                    @tensor AA3_temp[:]:=AA3_temp[1,-2,-3,-4]*gate[-1,1];
-                    @tensor vr_temp[:]:=AA1_temp[-1,2,1,6]*AA2_temp[-2,4,3,2]*AA3_temp[-3,6,5,4]*vr_temp[1,3,5,-4];
-                    vr=vr+vr_temp;
                 end
             end
         end
@@ -293,32 +319,45 @@ function M_vr(l_Vodd,l_Veven,vr0)
         for cc2=1:l_Vodd
             for parity_P2=0:1
                 for parity_P3=0:1
-                    vr_temp=deepcopy(vr0);#L1,L2,L3,dummy
-                    AA1_temp=deepcopy(AA1_Veven_Vodd[cc1,cc2]);
-                    if parity_P2==1
-                        AA2_temp=deepcopy(AA2_Phyodd);
-                    elseif parity_P2==0
-                        AA2_temp=deepcopy(AA2_Phyeven);
+                    for parity_P4=0:1
+                        vr_temp=deepcopy(vr0);#L1,L2,L3,dummy
+                        AA1_temp=deepcopy(AA1_Veven_Vodd[cc1,cc2]);
+                        if parity_P2==1
+                            AA2_temp=deepcopy(AA2_Phyodd);
+                        elseif parity_P2==0
+                            AA2_temp=deepcopy(AA2_Phyeven);
+                        end
+                        if parity_P3==1
+                            AA3_temp=deepcopy(AA3_Phyodd);
+                        elseif parity_P3==0
+                            AA3_temp=deepcopy(AA3_Phyeven);
+                        end
+                        if parity_P4==1
+                            AA4_temp=deepcopy(AA4_Phyodd_Veven_Vodd[cc1,cc2]);
+                        elseif parity_P4==0
+                            AA4_temp=deepcopy(AA4_Phyeven_Veven_Vodd[cc1,cc2]);
+                        end
+                        gate=parity_gate(AA1_temp,4); @tensor AA1_temp[:]:=AA1_temp[-1,-2,-3,1]*gate[-4,1];#sign of U1,U1'
+                        if parity_P2==1
+                            gate=parity_gate(AA1_temp,3); @tensor AA1_temp[:]:=AA1_temp[-1,-2,1,-4]*gate[-3,1];#sign P2*(R1+R1')
+                        end
+                        if parity_P3==1
+                            gate=parity_gate(AA1_temp,3); @tensor AA1_temp[:]:=AA1_temp[-1,-2,1,-4]*gate[-3,1];#sign P3*(R1+R1')
+                            gate=parity_gate(AA2_temp,3); @tensor AA2_temp[:]:=AA2_temp[-1,-2,1,-4]*gate[-3,1];#sign P3*(R2+R2')
+                        end
+                        if parity_P4==1
+                            gate=parity_gate(AA1_temp,3); @tensor AA1_temp[:]:=AA1_temp[-1,-2,1,-4]*gate[-3,1];#sign P4*(R1+R1'+R2+R2'+R3+R3')
+                            gate=parity_gate(AA2_temp,3); @tensor AA2_temp[:]:=AA2_temp[-1,-2,1,-4]*gate[-3,1];#sign P4*(R1+R1'+R2+R2'+R3+R3')
+                            gate=parity_gate(AA3_temp,3); @tensor AA3_temp[:]:=AA3_temp[-1,-2,1,-4]*gate[-3,1];#sign P4*(R1+R1'+R2+R2'+R3+R3')
+                        end
+                        gate=deepcopy(gate_lower); #sign U1*(L1+L2+L3+L4) + U1'*(L1'+L2'+L3'+L4')                    
+                        @tensor AA1_temp[:]:=AA1_temp[1,-2,-3,-4]*gate[-1,1];
+                        @tensor AA2_temp[:]:=AA2_temp[1,-2,-3,-4]*gate[-1,1];
+                        @tensor AA3_temp[:]:=AA3_temp[1,-2,-3,-4]*gate[-1,1];
+                        @tensor AA4_temp[:]:=AA4_temp[1,-2,-3,-4]*gate[-1,1];
+                        @tensor vr_temp[:]:=AA1_temp[-1,2,1,8]*AA2_temp[-2,4,3,2]*AA3_temp[-3,6,5,4]*AA4_temp[-4,8,7,6]*vr_temp[1,3,5,7,-5];
+                        vr=vr+vr_temp;
                     end
-                    if parity_P3==1
-                        AA3_temp=deepcopy(AA3_Phyodd_Veven_Vodd[cc1,cc2]);
-                    elseif parity_P3==0
-                        AA3_temp=deepcopy(AA3_Phyeven_Veven_Vodd[cc1,cc2]);
-                    end
-                    gate=parity_gate(AA1_temp,4); @tensor AA1_temp[:]:=AA1_temp[-1,-2,-3,1]*gate[-4,1];#sign of U1,U1'
-                    if parity_P2==1
-                        gate=parity_gate(AA1_temp,3); @tensor AA1_temp[:]:=AA1_temp[-1,-2,1,-4]*gate[-3,1];#sign P2*(R1+R1')
-                    end
-                    if parity_P3==1
-                        gate=parity_gate(AA1_temp,3); @tensor AA1_temp[:]:=AA1_temp[-1,-2,1,-4]*gate[-3,1];#sign P3*(R1+R1')
-                        gate=parity_gate(AA2_temp,3); @tensor AA2_temp[:]:=AA2_temp[-1,-2,1,-4]*gate[-3,1];#sign P3*(R2+R2')
-                    end
-                    gate=deepcopy(gate_lower); #sign U1*(L1+L2+L3) + U1'*(L1'+L2'+L3')                    
-                    @tensor AA1_temp[:]:=AA1_temp[1,-2,-3,-4]*gate[-1,1];
-                    @tensor AA2_temp[:]:=AA2_temp[1,-2,-3,-4]*gate[-1,1];
-                    @tensor AA3_temp[:]:=AA3_temp[1,-2,-3,-4]*gate[-1,1];
-                    @tensor vr_temp[:]:=AA1_temp[-1,2,1,6]*AA2_temp[-2,4,3,2]*AA3_temp[-3,6,5,4]*vr_temp[1,3,5,-4];
-                    vr=vr+vr_temp;
                 end
             end
         end
@@ -330,29 +369,41 @@ function M_vr(l_Vodd,l_Veven,vr0)
         for cc2=1:l_Veven
             for parity_P2=0:1
                 for parity_P3=0:1
-                    vr_temp=deepcopy(vr0);#L1,L2,L3,dummy
-                    AA1_temp=deepcopy(AA1_Veven_Veven[cc1,cc2]);
-                    if parity_P2==1
-                        AA2_temp=deepcopy(AA2_Phyodd);
-                    elseif parity_P2==0
-                        AA2_temp=deepcopy(AA2_Phyeven);
+                    for parity_P4=0:1
+                        vr_temp=deepcopy(vr0);#L1,L2,L3,dummy
+                        AA1_temp=deepcopy(AA1_Veven_Veven[cc1,cc2]);
+                        if parity_P2==1
+                            AA2_temp=deepcopy(AA2_Phyodd);
+                        elseif parity_P2==0
+                            AA2_temp=deepcopy(AA2_Phyeven);
+                        end
+                        if parity_P3==1
+                            AA3_temp=deepcopy(AA3_Phyodd);
+                        elseif parity_P3==0
+                            AA3_temp=deepcopy(AA3_Phyeven);
+                        end
+                        if parity_P4==1
+                            AA4_temp=deepcopy(AA4_Phyodd_Veven_Veven[cc1,cc2]);
+                        elseif parity_P4==0
+                            AA4_temp=deepcopy(AA4_Phyeven_Veven_Veven[cc1,cc2]);
+                        end
+                        gate=parity_gate(AA1_temp,4); @tensor AA1_temp[:]:=AA1_temp[-1,-2,-3,1]*gate[-4,1];#sign of U1,U1'
+                        if parity_P2==1
+                            gate=parity_gate(AA1_temp,3); @tensor AA1_temp[:]:=AA1_temp[-1,-2,1,-4]*gate[-3,1];#sign P2*(R1+R1')
+                        end
+                        if parity_P3==1
+                            gate=parity_gate(AA1_temp,3); @tensor AA1_temp[:]:=AA1_temp[-1,-2,1,-4]*gate[-3,1];#sign P3*(R1+R1')
+                            gate=parity_gate(AA2_temp,3); @tensor AA2_temp[:]:=AA2_temp[-1,-2,1,-4]*gate[-3,1];#sign P3*(R2+R2')
+                        end
+                        if parity_P4==1
+                            gate=parity_gate(AA1_temp,3); @tensor AA1_temp[:]:=AA1_temp[-1,-2,1,-4]*gate[-3,1];#sign P4*(R1+R1'+R2+R2'+R3+R3')
+                            gate=parity_gate(AA2_temp,3); @tensor AA2_temp[:]:=AA2_temp[-1,-2,1,-4]*gate[-3,1];#sign P4*(R1+R1'+R2+R2'+R3+R3')
+                            gate=parity_gate(AA3_temp,3); @tensor AA3_temp[:]:=AA3_temp[-1,-2,1,-4]*gate[-3,1];#sign P4*(R1+R1'+R2+R2'+R3+R3')
+                        end
+                        #No sign for U1*(L1+L2+L3+L4) + U1'*(L1'+L2'+L3'+L4') 
+                        @tensor vr_temp[:]:=AA1_temp[-1,2,1,8]*AA2_temp[-2,4,3,2]*AA3_temp[-3,6,5,4]*AA4_temp[-4,8,7,6]*vr_temp[1,3,5,7,-5];
+                        vr=vr+vr_temp;
                     end
-                    if parity_P3==1
-                        AA3_temp=deepcopy(AA3_Phyodd_Veven_Veven[cc1,cc2]);
-                    elseif parity_P3==0
-                        AA3_temp=deepcopy(AA3_Phyeven_Veven_Veven[cc1,cc2]);
-                    end
-                    gate=parity_gate(AA1_temp,4); @tensor AA1_temp[:]:=AA1_temp[-1,-2,-3,1]*gate[-4,1];#sign of U1,U1'
-                    if parity_P2==1
-                        gate=parity_gate(AA1_temp,3); @tensor AA1_temp[:]:=AA1_temp[-1,-2,1,-4]*gate[-3,1];#sign P2*(R1+R1')
-                    end
-                    if parity_P3==1
-                        gate=parity_gate(AA1_temp,3); @tensor AA1_temp[:]:=AA1_temp[-1,-2,1,-4]*gate[-3,1];#sign P3*(R1+R1')
-                        gate=parity_gate(AA2_temp,3); @tensor AA2_temp[:]:=AA2_temp[-1,-2,1,-4]*gate[-3,1];#sign P3*(R2+R2')
-                    end
-                    #No sign for U1*(L1+L2+L3) + U1'*(L1'+L2'+L3') 
-                    @tensor vr_temp[:]:=AA1_temp[-1,2,1,6]*AA2_temp[-2,4,3,2]*AA3_temp[-3,6,5,4]*vr_temp[1,3,5,-4];
-                    vr=vr+vr_temp;
                 end
             end
         end
@@ -374,32 +425,45 @@ function vl_M(l_Vodd,l_Veven,vl0)
         for cc2=1:l_Vodd
             for parity_P2=0:1
                 for parity_P3=0:1
-                    vl_temp=deepcopy(vl0);#L1,L2,L3,dummy
-                    AA1_temp=deepcopy(AA1_Vodd_Vodd[cc1,cc2]);
-                    if parity_P2==1
-                        AA2_temp=deepcopy(AA2_Phyodd);
-                    elseif parity_P2==0
-                        AA2_temp=deepcopy(AA2_Phyeven);
+                    for parity_P4=0:1
+                        vl_temp=deepcopy(vl0);#L1,L2,L3,dummy
+                        AA1_temp=deepcopy(AA1_Vodd_Vodd[cc1,cc2]);
+                        if parity_P2==1
+                            AA2_temp=deepcopy(AA2_Phyodd);
+                        elseif parity_P2==0
+                            AA2_temp=deepcopy(AA2_Phyeven);
+                        end
+                        if parity_P3==1
+                            AA3_temp=deepcopy(AA3_Phyodd);
+                        elseif parity_P3==0
+                            AA3_temp=deepcopy(AA3_Phyeven);
+                        end
+                        if parity_P4==1
+                            AA4_temp=deepcopy(AA4_Phyodd_Vodd_Vodd[cc1,cc2]);
+                        elseif parity_P4==0
+                            AA4_temp=deepcopy(AA4_Phyeven_Vodd_Vodd[cc1,cc2]);
+                        end
+                        gate=parity_gate(AA1_temp,4); @tensor AA1_temp[:]:=AA1_temp[-1,-2,-3,1]*gate[-4,1];#sign of U1,U1'
+                        if parity_P2==1
+                            gate=parity_gate(AA1_temp,3); @tensor AA1_temp[:]:=AA1_temp[-1,-2,1,-4]*gate[-3,1];#sign P2*(R1+R1')
+                        end
+                        if parity_P3==1
+                            gate=parity_gate(AA1_temp,3); @tensor AA1_temp[:]:=AA1_temp[-1,-2,1,-4]*gate[-3,1];#sign P3*(R1+R1')
+                            gate=parity_gate(AA2_temp,3); @tensor AA2_temp[:]:=AA2_temp[-1,-2,1,-4]*gate[-3,1];#sign P3*(R2+R2')
+                        end
+                        if parity_P4==1
+                            gate=parity_gate(AA1_temp,3); @tensor AA1_temp[:]:=AA1_temp[-1,-2,1,-4]*gate[-3,1];#sign P4*(R1+R1'+R2+R2'+R3+R3')
+                            gate=parity_gate(AA2_temp,3); @tensor AA2_temp[:]:=AA2_temp[-1,-2,1,-4]*gate[-3,1];#sign P4*(R1+R1'+R2+R2'+R3+R3')
+                            gate=parity_gate(AA3_temp,3); @tensor AA3_temp[:]:=AA3_temp[-1,-2,1,-4]*gate[-3,1];#sign P4*(R1+R1'+R2+R2'+R3+R3')
+                        end
+                        gate=parity_gate(AA1_temp,1); #sign U1*(L1+L2+L3+L4) + U1'*(L1'+L2'+L3'+L4') 
+                        @tensor AA1_temp[:]:=AA1_temp[1,-2,-3,-4]*gate[-1,1];
+                        @tensor AA2_temp[:]:=AA2_temp[1,-2,-3,-4]*gate[-1,1];
+                        @tensor AA3_temp[:]:=AA3_temp[1,-2,-3,-4]*gate[-1,1];
+                        @tensor AA4_temp[:]:=AA4_temp[1,-2,-3,-4]*gate[-1,1];
+                        @tensor vl_temp[:]:=AA1_temp[1,2,-2,8]*AA2_temp[3,4,-3,2]*AA3_temp[5,6,-4,4]*AA4_temp[7,8,-5,6]*vl_temp[-1,1,3,5,7];
+                        vl=vl+vl_temp;
                     end
-                    if parity_P3==1
-                        AA3_temp=deepcopy(AA3_Phyodd_Vodd_Vodd[cc1,cc2]);
-                    elseif parity_P3==0
-                        AA3_temp=deepcopy(AA3_Phyeven_Vodd_Vodd[cc1,cc2]);
-                    end
-                    gate=parity_gate(AA1_temp,4); @tensor AA1_temp[:]:=AA1_temp[-1,-2,-3,1]*gate[-4,1];#sign of U1,U1'
-                    if parity_P2==1
-                        gate=parity_gate(AA1_temp,3); @tensor AA1_temp[:]:=AA1_temp[-1,-2,1,-4]*gate[-3,1];#sign P2*(R1+R1')
-                    end
-                    if parity_P3==1
-                        gate=parity_gate(AA1_temp,3); @tensor AA1_temp[:]:=AA1_temp[-1,-2,1,-4]*gate[-3,1];#sign P3*(R1+R1')
-                        gate=parity_gate(AA2_temp,3); @tensor AA2_temp[:]:=AA2_temp[-1,-2,1,-4]*gate[-3,1];#sign P3*(R2+R2')
-                    end
-                    gate=parity_gate(AA1_temp,1); #sign U1*(L1+L2+L3) + U1'*(L1'+L2'+L3') 
-                    @tensor AA1_temp[:]:=AA1_temp[1,-2,-3,-4]*gate[-1,1];
-                    @tensor AA2_temp[:]:=AA2_temp[1,-2,-3,-4]*gate[-1,1];
-                    @tensor AA3_temp[:]:=AA3_temp[1,-2,-3,-4]*gate[-1,1];
-                    @tensor vl_temp[:]:=AA1_temp[1,2,-2,6]*AA2_temp[3,4,-3,2]*AA3_temp[5,6,-4,4]*vl_temp[-1,1,3,5];
-                    vl=vl+vl_temp;
                 end
             end
         end
@@ -410,32 +474,45 @@ function vl_M(l_Vodd,l_Veven,vl0)
         for cc2=1:l_Veven
             for parity_P2=0:1
                 for parity_P3=0:1
-                    vl_temp=deepcopy(vl0);#dummy,R1,R2,R3
-                    AA1_temp=deepcopy(AA1_Vodd_Veven[cc1,cc2]);
-                    if parity_P2==1
-                        AA2_temp=deepcopy(AA2_Phyodd);
-                    elseif parity_P2==0
-                        AA2_temp=deepcopy(AA2_Phyeven);
+                    for parity_P4=0:1
+                        vl_temp=deepcopy(vl0);#dummy,R1,R2,R3
+                        AA1_temp=deepcopy(AA1_Vodd_Veven[cc1,cc2]);
+                        if parity_P2==1
+                            AA2_temp=deepcopy(AA2_Phyodd);
+                        elseif parity_P2==0
+                            AA2_temp=deepcopy(AA2_Phyeven);
+                        end
+                        if parity_P3==1
+                            AA3_temp=deepcopy(AA3_Phyodd);
+                        elseif parity_P3==0
+                            AA3_temp=deepcopy(AA3_Phyeven);
+                        end
+                        if parity_P4==1
+                            AA4_temp=deepcopy(AA4_Phyodd_Vodd_Veven[cc1,cc2]);
+                        elseif parity_P4==0
+                            AA4_temp=deepcopy(AA4_Phyeven_Vodd_Veven[cc1,cc2]);
+                        end
+                        gate=parity_gate(AA1_temp,4); @tensor AA1_temp[:]:=AA1_temp[-1,-2,-3,1]*gate[-4,1];#sign of U1,U1'
+                        if parity_P2==1
+                            gate=parity_gate(AA1_temp,3); @tensor AA1_temp[:]:=AA1_temp[-1,-2,1,-4]*gate[-3,1];#sign P2*(R1+R1')
+                        end
+                        if parity_P3==1
+                            gate=parity_gate(AA1_temp,3); @tensor AA1_temp[:]:=AA1_temp[-1,-2,1,-4]*gate[-3,1];#sign P3*(R1+R1')
+                            gate=parity_gate(AA2_temp,3); @tensor AA2_temp[:]:=AA2_temp[-1,-2,1,-4]*gate[-3,1];#sign P3*(R2+R2')
+                        end
+                        if parity_P4==1
+                            gate=parity_gate(AA1_temp,3); @tensor AA1_temp[:]:=AA1_temp[-1,-2,1,-4]*gate[-3,1];#sign P4*(R1+R1'+R2+R2'+R3+R3')
+                            gate=parity_gate(AA2_temp,3); @tensor AA2_temp[:]:=AA2_temp[-1,-2,1,-4]*gate[-3,1];#sign P4*(R1+R1'+R2+R2'+R3+R3')
+                            gate=parity_gate(AA3_temp,3); @tensor AA3_temp[:]:=AA3_temp[-1,-2,1,-4]*gate[-3,1];#sign P4*(R1+R1'+R2+R2'+R3+R3')
+                        end
+                        gate=deepcopy(gate_upper); #sign U1*(L1+L2+L3+L4) + U1'*(L1'+L2'+L3'+L4')                    
+                        @tensor AA1_temp[:]:=AA1_temp[1,-2,-3,-4]*gate[-1,1];
+                        @tensor AA2_temp[:]:=AA2_temp[1,-2,-3,-4]*gate[-1,1];
+                        @tensor AA3_temp[:]:=AA3_temp[1,-2,-3,-4]*gate[-1,1];
+                        @tensor AA4_temp[:]:=AA4_temp[1,-2,-3,-4]*gate[-1,1];
+                        @tensor vl_temp[:]:=AA1_temp[1,2,-2,8]*AA2_temp[3,4,-3,2]*AA3_temp[5,6,-4,4]*AA4_temp[7,8,-5,6]*vl_temp[-1,1,3,5,7];
+                        vl=vl+vl_temp;
                     end
-                    if parity_P3==1
-                        AA3_temp=deepcopy(AA3_Phyodd_Vodd_Veven[cc1,cc2]);
-                    elseif parity_P3==0
-                        AA3_temp=deepcopy(AA3_Phyeven_Vodd_Veven[cc1,cc2]);
-                    end
-                    gate=parity_gate(AA1_temp,4); @tensor AA1_temp[:]:=AA1_temp[-1,-2,-3,1]*gate[-4,1];#sign of U1,U1'
-                    if parity_P2==1
-                        gate=parity_gate(AA1_temp,3); @tensor AA1_temp[:]:=AA1_temp[-1,-2,1,-4]*gate[-3,1];#sign P2*(R1+R1')
-                    end
-                    if parity_P3==1
-                        gate=parity_gate(AA1_temp,3); @tensor AA1_temp[:]:=AA1_temp[-1,-2,1,-4]*gate[-3,1];#sign P3*(R1+R1')
-                        gate=parity_gate(AA2_temp,3); @tensor AA2_temp[:]:=AA2_temp[-1,-2,1,-4]*gate[-3,1];#sign P3*(R2+R2')
-                    end
-                    gate=deepcopy(gate_upper); #sign U1*(L1+L2+L3) + U1'*(L1'+L2'+L3')                    
-                    @tensor AA1_temp[:]:=AA1_temp[1,-2,-3,-4]*gate[-1,1];
-                    @tensor AA2_temp[:]:=AA2_temp[1,-2,-3,-4]*gate[-1,1];
-                    @tensor AA3_temp[:]:=AA3_temp[1,-2,-3,-4]*gate[-1,1];
-                    @tensor vl_temp[:]:=AA1_temp[1,2,-2,6]*AA2_temp[3,4,-3,2]*AA3_temp[5,6,-4,4]*vl_temp[-1,1,3,5];
-                    vl=vl+vl_temp;
                 end
             end
         end
@@ -446,32 +523,45 @@ function vl_M(l_Vodd,l_Veven,vl0)
         for cc2=1:l_Vodd
             for parity_P2=0:1
                 for parity_P3=0:1
-                    vl_temp=deepcopy(vl0);#dummy,R1,R2,R3
-                    AA1_temp=deepcopy(AA1_Veven_Vodd[cc1,cc2]);
-                    if parity_P2==1
-                        AA2_temp=deepcopy(AA2_Phyodd);
-                    elseif parity_P2==0
-                        AA2_temp=deepcopy(AA2_Phyeven);
+                    for parity_P4=0:1
+                        vl_temp=deepcopy(vl0);#dummy,R1,R2,R3
+                        AA1_temp=deepcopy(AA1_Veven_Vodd[cc1,cc2]);
+                        if parity_P2==1
+                            AA2_temp=deepcopy(AA2_Phyodd);
+                        elseif parity_P2==0
+                            AA2_temp=deepcopy(AA2_Phyeven);
+                        end
+                        if parity_P3==1
+                            AA3_temp=deepcopy(AA3_Phyodd);
+                        elseif parity_P3==0
+                            AA3_temp=deepcopy(AA3_Phyeven);
+                        end
+                        if parity_P4==1
+                            AA4_temp=deepcopy(AA4_Phyodd_Veven_Vodd[cc1,cc2]);
+                        elseif parity_P4==0
+                            AA4_temp=deepcopy(AA4_Phyeven_Veven_Vodd[cc1,cc2]);
+                        end
+                        gate=parity_gate(AA1_temp,4); @tensor AA1_temp[:]:=AA1_temp[-1,-2,-3,1]*gate[-4,1];#sign of U1,U1'
+                        if parity_P2==1
+                            gate=parity_gate(AA1_temp,3); @tensor AA1_temp[:]:=AA1_temp[-1,-2,1,-4]*gate[-3,1];#sign P2*(R1+R1')
+                        end
+                        if parity_P3==1
+                            gate=parity_gate(AA1_temp,3); @tensor AA1_temp[:]:=AA1_temp[-1,-2,1,-4]*gate[-3,1];#sign P3*(R1+R1')
+                            gate=parity_gate(AA2_temp,3); @tensor AA2_temp[:]:=AA2_temp[-1,-2,1,-4]*gate[-3,1];#sign P3*(R2+R2')
+                        end
+                        if parity_P4==1
+                            gate=parity_gate(AA1_temp,3); @tensor AA1_temp[:]:=AA1_temp[-1,-2,1,-4]*gate[-3,1];#sign P4*(R1+R1'+R2+R2'+R3+R3')
+                            gate=parity_gate(AA2_temp,3); @tensor AA2_temp[:]:=AA2_temp[-1,-2,1,-4]*gate[-3,1];#sign P4*(R1+R1'+R2+R2'+R3+R3')
+                            gate=parity_gate(AA3_temp,3); @tensor AA3_temp[:]:=AA3_temp[-1,-2,1,-4]*gate[-3,1];#sign P4*(R1+R1'+R2+R2'+R3+R3')
+                        end
+                        gate=deepcopy(gate_lower); #sign U1*(L1+L2+L3+L4) + U1'*(L1'+L2'+L3'+L4')                  
+                        @tensor AA1_temp[:]:=AA1_temp[1,-2,-3,-4]*gate[-1,1];
+                        @tensor AA2_temp[:]:=AA2_temp[1,-2,-3,-4]*gate[-1,1];
+                        @tensor AA3_temp[:]:=AA3_temp[1,-2,-3,-4]*gate[-1,1];
+                        @tensor AA4_temp[:]:=AA4_temp[1,-2,-3,-4]*gate[-1,1];
+                        @tensor vl_temp[:]:=AA1_temp[1,2,-2,8]*AA2_temp[3,4,-3,2]*AA3_temp[5,6,-4,4]*AA4_temp[7,8,-5,6]*vl_temp[-1,1,3,5,7];
+                        vl=vl+vl_temp;
                     end
-                    if parity_P3==1
-                        AA3_temp=deepcopy(AA3_Phyodd_Veven_Vodd[cc1,cc2]);
-                    elseif parity_P3==0
-                        AA3_temp=deepcopy(AA3_Phyeven_Veven_Vodd[cc1,cc2]);
-                    end
-                    gate=parity_gate(AA1_temp,4); @tensor AA1_temp[:]:=AA1_temp[-1,-2,-3,1]*gate[-4,1];#sign of U1,U1'
-                    if parity_P2==1
-                        gate=parity_gate(AA1_temp,3); @tensor AA1_temp[:]:=AA1_temp[-1,-2,1,-4]*gate[-3,1];#sign P2*(R1+R1')
-                    end
-                    if parity_P3==1
-                        gate=parity_gate(AA1_temp,3); @tensor AA1_temp[:]:=AA1_temp[-1,-2,1,-4]*gate[-3,1];#sign P3*(R1+R1')
-                        gate=parity_gate(AA2_temp,3); @tensor AA2_temp[:]:=AA2_temp[-1,-2,1,-4]*gate[-3,1];#sign P3*(R2+R2')
-                    end
-                    gate=deepcopy(gate_lower); #sign U1*(L1+L2+L3) + U1'*(L1'+L2'+L3')                    
-                    @tensor AA1_temp[:]:=AA1_temp[1,-2,-3,-4]*gate[-1,1];
-                    @tensor AA2_temp[:]:=AA2_temp[1,-2,-3,-4]*gate[-1,1];
-                    @tensor AA3_temp[:]:=AA3_temp[1,-2,-3,-4]*gate[-1,1];
-                    @tensor vl_temp[:]:=AA1_temp[1,2,-2,6]*AA2_temp[3,4,-3,2]*AA3_temp[5,6,-4,4]*vl_temp[-1,1,3,5];
-                    vl=vl+vl_temp;
                 end
             end
         end
@@ -483,29 +573,41 @@ function vl_M(l_Vodd,l_Veven,vl0)
         for cc2=1:l_Veven
             for parity_P2=0:1
                 for parity_P3=0:1
-                    vl_temp=deepcopy(vl0);#dummy,R1,R2,R3
-                    AA1_temp=deepcopy(AA1_Veven_Veven[cc1,cc2]);
-                    if parity_P2==1
-                        AA2_temp=deepcopy(AA2_Phyodd);
-                    elseif parity_P2==0
-                        AA2_temp=deepcopy(AA2_Phyeven);
+                    for parity_P4=0:1
+                        vl_temp=deepcopy(vl0);#dummy,R1,R2,R3
+                        AA1_temp=deepcopy(AA1_Veven_Veven[cc1,cc2]);
+                        if parity_P2==1
+                            AA2_temp=deepcopy(AA2_Phyodd);
+                        elseif parity_P2==0
+                            AA2_temp=deepcopy(AA2_Phyeven);
+                        end
+                        if parity_P3==1
+                            AA3_temp=deepcopy(AA3_Phyodd);
+                        elseif parity_P3==0
+                            AA3_temp=deepcopy(AA3_Phyeven);
+                        end
+                        if parity_P4==1
+                            AA4_temp=deepcopy(AA4_Phyodd_Veven_Veven[cc1,cc2]);
+                        elseif parity_P4==0
+                            AA4_temp=deepcopy(AA4_Phyeven_Veven_Veven[cc1,cc2]);
+                        end
+                        gate=parity_gate(AA1_temp,4); @tensor AA1_temp[:]:=AA1_temp[-1,-2,-3,1]*gate[-4,1];#sign of U1,U1'
+                        if parity_P2==1
+                            gate=parity_gate(AA1_temp,3); @tensor AA1_temp[:]:=AA1_temp[-1,-2,1,-4]*gate[-3,1];#sign P2*(R1+R1')
+                        end
+                        if parity_P3==1
+                            gate=parity_gate(AA1_temp,3); @tensor AA1_temp[:]:=AA1_temp[-1,-2,1,-4]*gate[-3,1];#sign P3*(R1+R1')
+                            gate=parity_gate(AA2_temp,3); @tensor AA2_temp[:]:=AA2_temp[-1,-2,1,-4]*gate[-3,1];#sign P3*(R2+R2')
+                        end
+                        if parity_P4==1
+                            gate=parity_gate(AA1_temp,3); @tensor AA1_temp[:]:=AA1_temp[-1,-2,1,-4]*gate[-3,1];#sign P4*(R1+R1'+R2+R2'+R3+R3')
+                            gate=parity_gate(AA2_temp,3); @tensor AA2_temp[:]:=AA2_temp[-1,-2,1,-4]*gate[-3,1];#sign P4*(R1+R1'+R2+R2'+R3+R3')
+                            gate=parity_gate(AA3_temp,3); @tensor AA3_temp[:]:=AA3_temp[-1,-2,1,-4]*gate[-3,1];#sign P4*(R1+R1'+R2+R2'+R3+R3')
+                        end
+                        #No sign for U1*(L1+L2+L3+L4) + U1'*(L1'+L2'+L3'+L4') 
+                        @tensor vl_temp[:]:=AA1_temp[1,2,-2,8]*AA2_temp[3,4,-3,2]*AA3_temp[5,6,-4,4]*AA4_temp[7,8,-5,6]*vl_temp[-1,1,3,5,7];
+                        vl=vl+vl_temp;
                     end
-                    if parity_P3==1
-                        AA3_temp=deepcopy(AA3_Phyodd_Veven_Veven[cc1,cc2]);
-                    elseif parity_P3==0
-                        AA3_temp=deepcopy(AA3_Phyeven_Veven_Veven[cc1,cc2]);
-                    end
-                    gate=parity_gate(AA1_temp,4); @tensor AA1_temp[:]:=AA1_temp[-1,-2,-3,1]*gate[-4,1];#sign of U1,U1'
-                    if parity_P2==1
-                        gate=parity_gate(AA1_temp,3); @tensor AA1_temp[:]:=AA1_temp[-1,-2,1,-4]*gate[-3,1];#sign P2*(R1+R1')
-                    end
-                    if parity_P3==1
-                        gate=parity_gate(AA1_temp,3); @tensor AA1_temp[:]:=AA1_temp[-1,-2,1,-4]*gate[-3,1];#sign P3*(R1+R1')
-                        gate=parity_gate(AA2_temp,3); @tensor AA2_temp[:]:=AA2_temp[-1,-2,1,-4]*gate[-3,1];#sign P3*(R2+R2')
-                    end
-                    #No sign for U1*(L1+L2+L3) + U1'*(L1'+L2'+L3') 
-                    @tensor vl_temp[:]:=AA1_temp[1,2,-2,6]*AA2_temp[3,4,-3,2]*AA3_temp[5,6,-4,4]*vl_temp[-1,1,3,5];
-                    vl=vl+vl_temp;
                 end
             end
         end
@@ -532,32 +634,33 @@ VL=evl[findmax(abs.(eul))[2]];#dummy,R1,R2,R3,R4
 
 
 
-@tensor VL[:]:=VL[-1,1,2,3]*U_L[1,-2,-3]*U_L[2,-4,-5]*U_L[3,-6,-7];#dummy, R1',R1,R2',R2,R3',R3
-VL=permute(VL,(1,2,4,6,3,5,7,));#dummy, R1',R2',R3', R1,R2,R3
+@tensor VL[:]:=VL[-1,1,2,3,4]*U_L[1,-2,-3]*U_L[2,-4,-5]*U_L[3,-6,-7]*U_L[4,-8,-9];#dummy, R1',R1,R2',R2,R3',R3,R4',R4
+VL=permute(VL,(1,2,4,6,8,3,5,7,9,));#dummy, R1',R2',R3',R4', R1,R2,R3,R4
 
 
-@tensor VR[:]:=VR[1,2,3,-7]*U_L'[-1,-2,1]*U_L'[-3,-4,2]*U_L'[-5,-6,3];#L1',L1,L2',L2,L3',L3,dummy
-VR=permute(VR,(2,4,6,1,3,5,7,));#L1,L2,L3,L1',L2',L3',dummy
-
-
-
-
-@tensor H[:]:=VL[1,-1,-2,-3,2,3,4]*VR[2,3,4,-4,-5,-6,1];#R1',R2',R3' ,L1',L2',L3'
+@tensor VR[:]:=VR[1,2,3,4,-9]*U_L'[-1,-2,1]*U_L'[-3,-4,2]*U_L'[-5,-6,3]*U_L'[-7,-8,4];#L1',L1,L2',L2,L3',L3,L4',L4,dummy
+VR=permute(VR,(2,4,6,8,1,3,5,7,9,));#L1,L2,L3,L4,L1',L2',L3',L4',dummy
 
 
 
-eu,ev=eig(H,(1,2,3,),(4,5,6,))
+
+@tensor H[:]:=VL[1,-1,-2,-3,-4,2,3,4,5]*VR[2,3,4,5,-5,-6,-7,-8,1];#R1',R2',R3',R4' ,L1',L2',L3',L4'
+
+
+
+eu,ev=eig(H,(1,2,3,4,),(5,6,7,8,))
 eu=diag(convert(Array,eu));
 eu=eu/sum(eu)
 
 
 
-ev=permute(ev,(1,2,3,4,));#L1',L2',L3',dummy
-ev_translation=permute_neighbour_ind(deepcopy(ev'),1,2,4);#L2',L1',L3',dummy
-ev_translation=permute_neighbour_ind(deepcopy(ev_translation),2,3,4);#L2',L3',L1',dummy
+ev=permute(ev,(1,2,3,4,5,));#L1',L2',L3',L4',dummy
+ev_translation=permute_neighbour_ind(deepcopy(ev'),1,2,5);#L2',L1',L3',L4',dummy
+ev_translation=permute_neighbour_ind(deepcopy(ev_translation),2,3,5);#L2',L3',L1',L4',dummy
+ev_translation=permute_neighbour_ind(deepcopy(ev_translation),3,4,5);#L2',L3',L4',L1',dummy
 #ev_translation=permute(ev',(2,3,1,4,));#L1',L2',L3',dummy
 
-@tensor k_phase[:]:=ev_translation[1,2,3,-1]*ev[1,2,3,-2];
+@tensor k_phase[:]:=ev_translation[1,2,3,4,-1]*ev[1,2,3,4,-2];
 k_phase=convert(Array,k_phase);
 @assert norm(diagm(diag(k_phase))-k_phase)/norm(k_phase)<1e-10;
 
