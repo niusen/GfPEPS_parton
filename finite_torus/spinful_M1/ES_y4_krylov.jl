@@ -6,43 +6,69 @@ using HDF5, JLD2, MAT
 cd(@__DIR__)
 
 
+
 include("swap_funs.jl")
 include("fermi_permute.jl")
-include("gauge_flux.jl")
 include("double_layer_funs.jl")
 include("D:\\My Documents\\Code\\Julia_codes\\Tensor network\\GfPEPS_parton\\Projector_funs.jl")
 
 
 
 
+M=1;
+Guztwiller=false;#add projector
 
 
-data=load("swap_gate_Tensor_M1.jld2")
-A=data["A"];   #P1,P2,L,R,D,U
+data=load("swap_gate_Tensor_M"*string(M)*".jld2");
+P_G=data["P_G"];
 
-A_new=zeros(1,2,2,2,2,2,2)*im;
-A_new[1,:,:,:,:,:,:]=A;
-Vdummy=ℂ[U1Irrep](-3=>1);
-V=ℂ[U1Irrep](0=>1,1=>1);
-# Vdummy=GradedSpace[Irrep[U₁]⊠Irrep[ℤ₂]]((-3,1)=>1);
-# V=GradedSpace[Irrep[U₁]⊠Irrep[ℤ₂]]((0,0)=>1,(1,1)=>1);
-A_new = TensorMap(A_new, Vdummy ⊗ V ⊗ V ⊗ V ⊗ V ⊗ V ← V');
+psi_G=data["psi_G"];   #P1,P2,L,R,D,U
+M1=psi_G[1];
+M2=psi_G[2];
+M3=psi_G[3];
+M4=psi_G[4];
+M5=psi_G[5];
+M6=psi_G[6];
 
-@assert norm(convert(Array,A_new)[1,:,:,:,:,:,:]-A)/norm(A)<1e-14
-A=A_new; # dummy,P1,P2,L,R,D,U
+if Guztwiller
+    @tensor M1[:]:=M1[-1,-2,1]*P_G[-3,1];
+    @tensor M2[:]:=M2[-1,-2,1]*P_G[-3,1];
+    SS_op=data["SS_op_S"];
+else
+    SS_op=data["SS_op_F"];
+end
 
 
-U_phy1=unitary(fuse(space(A,1)⊗space(A,2)⊗space(A,3)), space(A,1)⊗space(A,2)⊗space(A,3));
-@tensor A[:]:=A[1,2,3,-2,-3,-4,-5]*U_phy1[-1,1,2,3]; # P,L,R,D,U
+U_phy1=unitary(fuse(space(M1,1)⊗space(M1,3)⊗space(M2,3)), space(M1,1)⊗space(M1,3)⊗space(M2,3));
+
+@tensor A[:]:=M1[4,1,2]*M2[1,-2,3]*U_phy1[-1,4,2,3];
+@tensor A[:]:=A[-1,1]*M3[1,-3,-2];
+@tensor A[:]:=A[-1,-2,1]*M4[1,-4,-3];
+@tensor A[:]:=A[-1,-2,-3,1]*M5[1,-5,-4];
+@tensor A[:]:=A[-1,-2,-3,-4,1]*M6[1,-6,-5];
+
+U_phy2=unitary(fuse(space(A,1)⊗space(A,6)), space(A,1)⊗space(A,6));
+@tensor A[:]:=A[1,-2,-3,-4,-5,2]*U_phy2[-1,1,2];
+# P,L,R,D,U
+
+
+bond=data["bond_gate"];#dummy, D1, D2 
 
 #Add bond:both parity gate and bond operator
-bond=zeros(1,2,2); bond[1,1,2]=1;bond[1,2,1]=1; bond=TensorMap(bond, ℂ[U1Irrep](1=>1) ← V ⊗ V);
-gate=parity_gate(A,3); @tensor A[:]:=A[-1,-2,1,-4,-5]*gate[-3,1];
 @tensor A[:]:=A[-1,-2,1,2,-5]*bond[-6,-3,1]*bond[-7,-4,2];
 U_phy2=unitary(fuse(space(A,1)⊗space(A,6)⊗space(A,7)), space(A,1)⊗space(A,6)⊗space(A,7));
 @tensor A[:]:=A[1,-2,-3,-4,-5,2,3]*U_phy2[-1,1,2,3];
 #P,L,R,D,U
 
+
+
+
+
+#swap between spin up and spin down modes, since |L,U,P><D,R|====L,U,P|><|R,D
+special_gate=special_parity_gate(A,3);
+@tensor A[:]:=A[-1,-2,1,-4,-5]*special_gate[-3,1];
+special_gate=special_parity_gate(A,4);
+@tensor A[:]:=A[-1,-2,-3,1,-5]*special_gate[-4,1];
 
 
 
@@ -57,6 +83,10 @@ A=permute(A,(2,1,3,4,5,));#L,P,U,R,D
 
 gate=swap_gate(A,2,3); @tensor A[:]:=A[-1,1,2,-4,-5]*gate[-2,-3,1,2]; 
 A=permute(A,(1,3,2,4,5,));#L,U,P,R,D
+
+
+#convention of fermionic PEPS: |L,U,P><D,R|====L,U,P|><|R,D
+
 
 A_origin=deepcopy(A);
 
@@ -616,14 +646,14 @@ function vl_M(l_Vodd,l_Veven,vl0)
 
     return vl;
 end
-v_init=TensorMap(randn, space(AA2_Phyodd,1)*space(AA2_Phyodd,1)*space(AA2_Phyodd,1)*space(AA2_Phyodd,1),Rep[U₁](0=>1));
+v_init=TensorMap(randn, space(AA2_Phyodd,1)*space(AA2_Phyodd,1)*space(AA2_Phyodd,1)*space(AA2_Phyodd,1),GradedSpace[Irrep[U₁]⊠Irrep[SU₂]]((0,0)=>1));
 v_init=permute(v_init,(1,2,3,4,5,),());#L1,L2,L3,L4,dummy
 contraction_fun_R(x)=M_vr(l_Vodd,l_Veven,x);
 @time eur,evr=eigsolve(contraction_fun_R, v_init, 1,:LM,Arnoldi(krylovdim=10));
 VR=evr[findmax(abs.(eur))[2]];#L1,L2,L3,L4,dummy
 VR_aa=deepcopy(VR);
 
-v_init=TensorMap(randn, space(AA2_Phyodd,3)*space(AA2_Phyodd,3)*space(AA2_Phyodd,3)*space(AA2_Phyodd,3),Rep[U₁](0=>1)');
+v_init=TensorMap(randn, space(AA2_Phyodd,3)*space(AA2_Phyodd,3)*space(AA2_Phyodd,3)*space(AA2_Phyodd,3),GradedSpace[Irrep[U₁]⊠Irrep[SU₂]]((0,0)=>1)');
 v_init=permute(v_init,(5,1,2,3,4,),());#dummy,R1,R2,R3,R4
 contraction_fun_L(x)=vl_M(l_Vodd,l_Veven,x);
 @time eul,evl=eigsolve(contraction_fun_L, v_init, 1,:LM,Arnoldi(krylovdim=10));
@@ -651,14 +681,15 @@ VR=permute(VR,(2,4,6,8,1,3,5,7,9,));#L1,L2,L3,L4,L1',L2',L3',L4',dummy
 eu,ev=eig(H,(1,2,3,4,),(5,6,7,8,))
 eu=diag(convert(Array,eu));
 eu=eu/sum(eu)
-
-Qn=vcat(0*ones(1),1*ones(4))
-Qn=vcat(Qn,2*ones(6));
-Qn=vcat(Qn,3*ones(4));
-Qn=vcat(Qn,4*ones(1));
-
-
-
+Qn=vcat(0*ones(1),-1*ones(8))
+Qn=vcat(Qn,-2*ones(28));
+Qn=vcat(Qn,-3*ones(56));
+Qn=vcat(Qn,-4*ones(70));
+Qn=vcat(Qn,-5*ones(56));
+Qn=vcat(Qn,-6*ones(28));
+Qn=vcat(Qn,-7*ones(8));
+Qn=vcat(Qn,-8*ones(1));
+println(sort(abs.(eu)))
 
 ev=permute(ev,(1,2,3,4,5,));#L1',L2',L3',L4',dummy
 ev_translation=permute_neighbour_ind(deepcopy(ev'),1,2,5);#L2',L1',L3',L4',dummy
@@ -677,14 +708,11 @@ eu=eu[order];
 k_phase=k_phase[order];
 Qn=Qn[order];
 
-matwrite("ES_freefermion_M1_Nv4"*".mat", Dict(
+matwrite("ES_freefermion_M2_Nv4"*".mat", Dict(
     "k_phase" => k_phase,
     "eu" => eu,
     "Qn"=>Qn
 ); compress = false)
-
-
-
 
 
 

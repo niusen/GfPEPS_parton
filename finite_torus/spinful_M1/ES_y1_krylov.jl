@@ -1,0 +1,153 @@
+using LinearAlgebra
+using TensorKit
+using JSON
+using HDF5, JLD2, MAT
+cd(@__DIR__)
+
+
+include("swap_funs.jl")
+include("fermi_permute.jl")
+include("double_layer_funs.jl")
+
+
+
+
+
+
+
+
+
+M=1;
+Guztwiller=false;#add projector
+
+
+data=load("swap_gate_Tensor_M"*string(M)*".jld2");
+P_G=data["P_G"];
+
+psi_G=data["psi_G"];   #P1,P2,L,R,D,U
+M1=psi_G[1];
+M2=psi_G[2];
+M3=psi_G[3];
+M4=psi_G[4];
+M5=psi_G[5];
+M6=psi_G[6];
+
+if Guztwiller
+    @tensor M1[:]:=M1[-1,-2,1]*P_G[-3,1];
+    @tensor M2[:]:=M2[-1,-2,1]*P_G[-3,1];
+    SS_op=data["SS_op_S"];
+else
+    SS_op=data["SS_op_F"];
+end
+
+
+U_phy1=unitary(fuse(space(M1,1)⊗space(M1,3)⊗space(M2,3)), space(M1,1)⊗space(M1,3)⊗space(M2,3));
+
+@tensor A[:]:=M1[4,1,2]*M2[1,-2,3]*U_phy1[-1,4,2,3];
+@tensor A[:]:=A[-1,1]*M3[1,-3,-2];
+@tensor A[:]:=A[-1,-2,1]*M4[1,-4,-3];
+@tensor A[:]:=A[-1,-2,-3,1]*M5[1,-5,-4];
+@tensor A[:]:=A[-1,-2,-3,-4,1]*M6[1,-6,-5];
+
+U_phy2=unitary(fuse(space(A,1)⊗space(A,6)), space(A,1)⊗space(A,6));
+@tensor A[:]:=A[1,-2,-3,-4,-5,2]*U_phy2[-1,1,2];
+# P,L,R,D,U
+
+
+bond=data["bond_gate"];#dummy, D1, D2 
+
+#Add bond:both parity gate and bond operator
+@tensor A[:]:=A[-1,-2,1,2,-5]*bond[-6,-3,1]*bond[-7,-4,2];
+U_phy2=unitary(fuse(space(A,1)⊗space(A,6)⊗space(A,7)), space(A,1)⊗space(A,6)⊗space(A,7));
+@tensor A[:]:=A[1,-2,-3,-4,-5,2,3]*U_phy2[-1,1,2,3];
+#P,L,R,D,U
+
+
+
+
+
+#swap between spin up and spin down modes, since |L,U,P><D,R|====L,U,P|><|R,D
+special_gate=special_parity_gate(A,3);
+@tensor A[:]:=A[-1,-2,1,-4,-5]*special_gate[-3,1];
+special_gate=special_parity_gate(A,4);
+@tensor A[:]:=A[-1,-2,-3,1,-5]*special_gate[-4,1];
+
+
+
+gate=swap_gate(A,4,5); @tensor A[:]:=A[-1,-2,-3,1,2]*gate[-4,-5,1,2];           
+A=permute(A,(1,2,3,5,4,));#P,L,R,U,D
+
+gate=swap_gate(A,3,4); @tensor A[:]:=A[-1,-2,1,2,-5]*gate[-3,-4,1,2]; 
+A=permute(A,(1,2,4,3,5,));#P,L,U,R,D
+
+gate=swap_gate(A,1,2); @tensor A[:]:=A[1,2,-3,-4,-5]*gate[-1,-2,1,2]; 
+A=permute(A,(2,1,3,4,5,));#L,P,U,R,D
+
+gate=swap_gate(A,2,3); @tensor A[:]:=A[-1,1,2,-4,-5]*gate[-2,-3,1,2]; 
+A=permute(A,(1,3,2,4,5,));#L,U,P,R,D
+
+
+#convention of fermionic PEPS: |L,U,P><D,R|====L,U,P|><|R,D
+
+
+A_origin=deepcopy(A);
+
+
+
+
+y_anti_pbc=true;
+boundary_phase_y=0.0;
+
+if y_anti_pbc
+    gauge_gate1=gauge_gate(A,2,2*pi*boundary_phase_y);
+    @tensor A[:]:=A[-1,1,-3,-4,-5]*gauge_gate1[-2,1];
+end
+
+#############################
+# #convert to the order of PEPS code
+A=permute(A,(1,5,4,2,3,));
+A_fused=deepcopy(A);
+AA_fused, U_L,U_D,U_R,U_U=build_double_layer_swap(deepcopy(A_fused'),deepcopy(A_fused));
+
+AA=permute(AA_fused,(1,4,3,2,));#L,U,R,D
+#############################
+
+
+
+
+
+#############################################
+#the below swap is necessary for twisted boundary condition
+
+AA=permute_neighbour_ind(AA,2,3,4);#L,R,U,D
+AA=permute_neighbour_ind(AA,3,4,4);#L,R,D,U
+@tensor AA[:]:=AA[-1,-2,1,1];
+AA2=deepcopy(AA);
+#############################################
+
+@tensor AA[:]:=AA[1,2]*U_L'[-1,-2,1]*U_L[2,-3,-4];
+    
+eu,ev=eig(AA,(1,2,),(3,4,))
+
+
+@assert norm(ev*eu*inv(ev)-permute(AA,(1,2,),(3,4,)))/norm(AA)<1e-12;
+
+eu_dense=abs.(diag(convert(Array,eu)));
+Pm=zeros(1,length(eu_dense))*im;
+Pm[findmax(abs.(eu_dense))[2]]=1;
+P=TensorMap(Pm,GradedSpace[Irrep[U₁]⊠Irrep[SU₂]]((0,0)=>1),space(eu,1));
+@assert abs(convert(Array,P*eu*P')[1])==maximum(abs.(diag(convert(Array,eu))))
+# U=unitary(fuse(space(AA,1)⊗space(AA,2)),space(AA,1)⊗space(AA,2));
+
+# @tensor AA[:]:=AA[1,2,3,4]*U[-1,1,2]*U'[3,4,-2];
+
+VL=permute(ev*P',(2,1,),(3,));#R,R'
+VR=P*inv(ev);#L',L
+
+@tensor H[:]:=VL[-1,1,2]*VR[2,1,-2];
+H=convert(Array,H);
+eu,ev=eigen(H);
+println(eu)
+
+
+
