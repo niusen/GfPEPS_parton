@@ -471,7 +471,7 @@ eu=eu/sum(eu)
 
 println(sort(abs.(eu)))
 
-ev=permute(ev,(1,2,3,4,5,6,));#L1',L2',L3',L4',L5',L6',dummy
+ev=permute(ev,(1,2,3,4,5,6,7,));#L1',L2',L3',L4',L5',L6',dummy
 ev_translation=permute_neighbour_ind(deepcopy(ev'),1,2,7);#L2',L1',L3',L4',L5',L6',dummy
 ev_translation=permute_neighbour_ind(deepcopy(ev_translation),2,3,7);#L2',L3',L1',L4',L5',L6',dummy
 ev_translation=permute_neighbour_ind(deepcopy(ev_translation),3,4,7);#L2',L3',L4',L1',L5',L6',dummy
@@ -521,7 +521,7 @@ eu=eu/sum(eu)
 
 println(sort(abs.(eu)))
 
-ev=permute(ev,(1,2,3,4,5,6,));#L1',L2',L3',L4',L5',L6',dummy
+ev=permute(ev,(1,2,3,4,5,6,7,));#L1',L2',L3',L4',L5',L6',dummy
 ev_translation=permute_neighbour_ind(deepcopy(ev'),1,2,7);#L2',L1',L3',L4',L5',L6',dummy
 ev_translation=permute_neighbour_ind(deepcopy(ev_translation),2,3,7);#L2',L3',L1',L4',L5',L6',dummy
 ev_translation=permute_neighbour_ind(deepcopy(ev_translation),3,4,7);#L2',L3',L4',L1',L5',L6',dummy

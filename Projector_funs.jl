@@ -223,3 +223,66 @@ function projector_physical(V)
 
 end
 
+function projector_general_SU2_U1(V1)
+
+    Qnlist=[];
+    Spinlist=[];
+    
+    for s in sectors(V1)
+        # println(s)
+        # println(dim(V1,s))
+        st=replace(string(s), "Irrep[U₁]" => "a");
+        st=replace(st, "⊠ Irrep[SU₂]" => "a");
+        #println(st)
+        left_pos,right_pos,slash_pos=QN_str_search(string(st));
+
+        Qn=parse(Int64, st[left_pos[2]+1:right_pos[1]-1])
+        if length(slash_pos)>0
+            @assert length(slash_pos)==1
+            Numerator=parse(Int64, st[left_pos[3]+1:slash_pos[1]-1])
+            Denominator=parse(Int64, st[slash_pos[1]+1:right_pos[2]-1])
+            Spin=Numerator/Denominator
+        else
+            Spin=Numerator=parse(Int64, st[left_pos[3]+1:right_pos[2]-1])
+        end
+        #println(Spin)
+        Dim=dim(V1, s)
+        #Dim=Int(Dim*(2*Spin+1))
+        for cc=1:Dim
+            Qnlist=vcat(Qnlist,Int(Qn));
+            Spinlist=vcat(Spinlist,Spin);
+
+        end
+        #Qnlist=vcat(Qnlist,Int.(ones(Dim))*Qn);
+        
+    end
+    # println(Qnlist)
+    # println(Spinlist)
+
+    L=length(Qnlist);
+    Ps=Vector(undef,L);
+    total_dim=Int(sum(Spinlist*2 .+1));
+    posit=0;
+    for cc=1:L
+        S=Spinlist[cc];
+        Qn=Qnlist[cc];
+        M=zeros(Int(2*S+1),total_dim)
+        for dd=1:Int(2*S+1)
+            M[dd,posit+dd]=1;
+        end
+        posit=posit+Int(2*S+1);
+        T=TensorMap(M,GradedSpace[Irrep[U₁]⊠Irrep[SU₂]]((Qn, S)=>1),V1);
+        Ps[cc]=T;
+    end
+
+    # #check
+    # @tensor T[:]:=Ps[1]'[-1,1]*Ps[1][1,-2];
+    # for cc=2:length(Ps);
+    #     @tensor TT[:]:=Ps[cc]'[-1,1]*Ps[cc][1,-2];
+    #     T=T+TT;
+    # end
+    # @assert norm(permute(T,(1,),(2,))-unitary(V1,V1))<1e-10
+
+    return Ps
+end
+

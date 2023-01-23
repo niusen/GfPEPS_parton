@@ -1,31 +1,31 @@
 using LinearAlgebra
 using TensorKit
+using KrylovKit
 using JSON
 using HDF5, JLD2, MAT
-cd("D:\\My Documents\\Code\\Julia_codes\\Tensor network\\GfPEPS_parton\\parton_ctmrg\\swap_gate_ctmrg\\M1")
-
-include("parton_CTMRG.jl")
-include("D:\\My Documents\\Code\\Julia_codes\\Tensor network\\GfPEPS_parton\\parton_ctmrg\\swap_gate_ctmrg\\correl_funs.jl")
-include("swap_funs.jl")
-include("D:\\My Documents\\Code\\Julia_codes\\Tensor network\\GfPEPS_parton\\parton_ctmrg\\swap_gate_ctmrg\\\ES_algorithms.jl")
-include("D:\\My Documents\\Code\\Julia_codes\\Tensor network\\GfPEPS_parton\\parton_ctmrg\\mpo_mps_funs.jl")
+cd(@__DIR__)
 
 
-M=1;#number of virtual mode
-chi=50
-N=4;
-EH_n=60;
+include("D:\\My Documents\\Code\\Julia_codes\\Tensor network\\GfPEPS_parton\\ES_CTMRG\\swap_funs.jl")
+include("D:\\My Documents\\Code\\Julia_codes\\Tensor network\\GfPEPS_parton\\ES_CTMRG\\fermi_permute.jl")
+include("D:\\My Documents\\Code\\Julia_codes\\Tensor network\\GfPEPS_parton\\ES_CTMRG\\double_layer_funs.jl")
+include("D:\\My Documents\\Code\\Julia_codes\\Tensor network\\GfPEPS_parton\\Projector_funs.jl")
+include("D:\\My Documents\\Code\\Julia_codes\\Tensor network\\GfPEPS_parton\\ES_CTMRG\\CTMRG_funs.jl")
+
+include("D:\\My Documents\\Code\\Julia_codes\\Tensor network\\GfPEPS_parton\\ES_CTMRG\\ES_algorithms.jl")
+
+
+chi=20
 tol=1e-6
-Guztwiller=false;#add projector
-
-
-
 CTM_ite_nums=500;
 CTM_trun_tol=1e-10;
 
 
-data=load("swap_gate_Tensor_M"*string(M)*".jld2")
+M=1;
+Guztwiller=true;#add projector
 
+
+data=load("swap_gate_Tensor_M"*string(M)*".jld2");
 P_G=data["P_G"];
 
 psi_G=data["psi_G"];   #P1,P2,L,R,D,U
@@ -90,33 +90,41 @@ A=permute(A,(2,1,3,4,5,));#L,P,U,R,D
 gate=swap_gate(A,2,3); @tensor A[:]:=A[-1,1,2,-4,-5]*gate[-2,-3,1,2]; 
 A=permute(A,(1,3,2,4,5,));#L,U,P,R,D
 
+
 #convention of fermionic PEPS: |L,U,P><D,R|====L,U,P|><|R,D
 
 
-#convert to the order of PEPS code
+A_origin=deepcopy(A);
+
+
+
+
+y_anti_pbc=true;
+boundary_phase_y=0;
+
+if y_anti_pbc
+    gauge_gate1=gauge_gate(A,2,2*pi/6*boundary_phase_y);
+    @tensor A[:]:=A[-1,1,-3,-4,-5]*gauge_gate1[-2,1];
+end
+
+#############################
+# #convert to the order of PEPS code
 A=permute(A,(1,5,4,2,3,));
 
-
-
-
-
-
-
-
-
-A_fused=A;
+#############################
 
 
 conv_check="singular_value";
-CTM, AA_fused, U_L,U_D,U_R,U_U=init_CTM(chi,A_fused,"PBC",true);
+CTM, AA_fused, U_L,U_D,U_R,U_U=init_CTM(chi,A,"PBC",true);
 @time CTM, AA_fused, U_L,U_D,U_R,U_U=CTMRG(AA_fused,chi,conv_check,tol,CTM,CTM_ite_nums,CTM_trun_tol);
 
-display(space(CTM["Cset"][1]))
-display(space(CTM["Cset"][2]))
-display(space(CTM["Cset"][3]))
-display(space(CTM["Cset"][4]))
+N=6;
+EH_n=30;
+include("D:\\My Documents\\Code\\Julia_codes\\Tensor network\\GfPEPS_parton\\ES_CTMRG\\ES_algorithms.jl")
 
-group_index=true;
 
-ES_CTMRG_ED_Kprojector(CTM,U_L,U_D,U_R,U_U,M,chi,N,EH_n,group_index)
+ES_CTMRG_ED(CTM,U_L,U_D,U_R,U_U,M,chi,N,EH_n);
+
+
+
 
