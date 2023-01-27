@@ -86,7 +86,7 @@ A_origin=deepcopy(A);
 
 
 y_anti_pbc=true;
-boundary_phase_y=0.0;
+boundary_phase_y=0.5;
 
 if y_anti_pbc
     gauge_gate1=gauge_gate(A,2,2*pi/4*boundary_phase_y);
@@ -700,11 +700,20 @@ eu=eu[order];
 k_phase=k_phase[order];
 Qn=Qn[order];
 
-matwrite("ES_freefermion_M2_Nv4"*".mat", Dict(
-    "k_phase" => k_phase,
-    "eu" => eu,
-    "Qn"=>Qn
-); compress = false)
+if y_anti_pbc
+    matwrite("ES_freefermion_M2_Nv4_APBC"*".mat", Dict(
+        "k_phase" => k_phase,
+        "eu" => eu,
+        "Qn"=>Qn
+    ); compress = false)
+else
+    matwrite("ES_freefermion_M2_Nv4"*".mat", Dict(
+        "k_phase" => k_phase,
+        "eu" => eu,
+        "Qn"=>Qn
+    ); compress = false)
+end
+    
 
 
 

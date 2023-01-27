@@ -224,6 +224,11 @@ function projector_physical(V)
 end
 
 function projector_general_SU2_U1(V1)
+    Prime=false;
+    if string(V1)[end]=='\''
+        Prime=true;
+    end
+
 
     Qnlist=[];
     Spinlist=[];
@@ -271,17 +276,21 @@ function projector_general_SU2_U1(V1)
             M[dd,posit+dd]=1;
         end
         posit=posit+Int(2*S+1);
-        T=TensorMap(M,GradedSpace[Irrep[U₁]⊠Irrep[SU₂]]((Qn, S)=>1),V1);
+        if Prime
+            T=TensorMap(M,(GradedSpace[Irrep[U₁]⊠Irrep[SU₂]]((-Qn, S)=>1))', V1);
+        else
+            T=TensorMap(M,GradedSpace[Irrep[U₁]⊠Irrep[SU₂]]((Qn, S)=>1),V1);
+        end
         Ps[cc]=T;
     end
 
-    # #check
-    # @tensor T[:]:=Ps[1]'[-1,1]*Ps[1][1,-2];
-    # for cc=2:length(Ps);
-    #     @tensor TT[:]:=Ps[cc]'[-1,1]*Ps[cc][1,-2];
-    #     T=T+TT;
-    # end
-    # @assert norm(permute(T,(1,),(2,))-unitary(V1,V1))<1e-10
+    #check
+    @tensor T[:]:=Ps[1]'[-1,1]*Ps[1][1,-2];
+    for cc=2:length(Ps);
+        @tensor TT[:]:=Ps[cc]'[-1,1]*Ps[cc][1,-2];
+        T=T+TT;
+    end
+    @assert norm(permute(T,(1,),(2,))-unitary(V1,V1))<1e-10
 
     return Ps
 end

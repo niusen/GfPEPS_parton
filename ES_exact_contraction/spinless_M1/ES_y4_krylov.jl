@@ -63,8 +63,8 @@ A_origin=deepcopy(A);
 
 
 
-y_anti_pbc=true;
-boundary_phase_y=0.0;
+y_anti_pbc=false;
+boundary_phase_y=0.5;
 
 if y_anti_pbc
     gauge_gate1=gauge_gate(A,2,2*pi/4*boundary_phase_y);
@@ -619,14 +619,14 @@ end
 v_init=TensorMap(randn, space(AA2_Phyodd,1)*space(AA2_Phyodd,1)*space(AA2_Phyodd,1)*space(AA2_Phyodd,1),Rep[U₁](0=>1));
 v_init=permute(v_init,(1,2,3,4,5,),());#L1,L2,L3,L4,dummy
 contraction_fun_R(x)=M_vr(l_Vodd,l_Veven,x);
-@time eur,evr=eigsolve(contraction_fun_R, v_init, 1,:LM,Arnoldi(krylovdim=10));
+@time eur,evr=eigsolve(contraction_fun_R, v_init, 1,:LM,Arnoldi(krylovdim=40));
 VR=evr[findmax(abs.(eur))[2]];#L1,L2,L3,L4,dummy
 VR_aa=deepcopy(VR);
 
 v_init=TensorMap(randn, space(AA2_Phyodd,3)*space(AA2_Phyodd,3)*space(AA2_Phyodd,3)*space(AA2_Phyodd,3),Rep[U₁](0=>1)');
 v_init=permute(v_init,(5,1,2,3,4,),());#dummy,R1,R2,R3,R4
 contraction_fun_L(x)=vl_M(l_Vodd,l_Veven,x);
-@time eul,evl=eigsolve(contraction_fun_L, v_init, 1,:LM,Arnoldi(krylovdim=10));
+@time eul,evl=eigsolve(contraction_fun_L, v_init, 1,:LM,Arnoldi(krylovdim=40));
 VL=evl[findmax(abs.(eul))[2]];#dummy,R1,R2,R3,R4
 
 
@@ -677,11 +677,20 @@ eu=eu[order];
 k_phase=k_phase[order];
 Qn=Qn[order];
 
-matwrite("ES_freefermion_M1_Nv4"*".mat", Dict(
-    "k_phase" => k_phase,
-    "eu" => eu,
-    "Qn"=>Qn
-); compress = false)
+if y_anti_pbc
+    matwrite("ES_freefermion_M1_Nv4_APBC"*".mat", Dict(
+        "k_phase" => k_phase,
+        "eu" => eu,
+        "Qn"=>Qn
+    ); compress = false)
+else
+    matwrite("ES_freefermion_M1_Nv4"*".mat", Dict(
+        "k_phase" => k_phase,
+        "eu" => eu,
+        "Qn"=>Qn
+    ); compress = false)
+end
+
 
 
 

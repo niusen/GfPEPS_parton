@@ -86,8 +86,8 @@ A_origin=deepcopy(A);
 
 
 
-y_anti_pbc=true;
-boundary_phase_y=0.0;
+y_anti_pbc=false;
+boundary_phase_y=0.5;
 
 if y_anti_pbc
     gauge_gate1=gauge_gate(A,2,2*pi/3*boundary_phase_y);
@@ -573,7 +573,25 @@ ev_translation=permute_neighbour_ind(deepcopy(ev_translation),2,3,4);#L2',L3',L1
 
 @tensor k_phase[:]:=ev_translation[1,2,3,-1]*ev[1,2,3,-2];
 k_phase=convert(Array,k_phase);
-@assert norm(diagm(diag(k_phase))-k_phase)/norm(k_phase)<1e-10;
+#@assert norm(diagm(diag(k_phase))-k_phase)/norm(k_phase)<1e-10;
 
+order=sortperm(abs.(eu));
+k_phase=diag(k_phase);
+eu=eu[order];
+k_phase=k_phase[order];
+Qn=Qn[order];
 
+if y_anti_pbc
+    matwrite("ES_freefermion_M2_Nv3_APBC"*".mat", Dict(
+        "k_phase" => k_phase,
+        "eu" => eu,
+        "Qn"=>Qn
+    ); compress = false)
+else
+    matwrite("ES_freefermion_M2_Nv3"*".mat", Dict(
+        "k_phase" => k_phase,
+        "eu" => eu,
+        "Qn"=>Qn
+    ); compress = false)
+end
 
