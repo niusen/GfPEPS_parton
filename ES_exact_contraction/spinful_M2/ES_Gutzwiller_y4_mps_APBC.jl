@@ -131,8 +131,12 @@ y_anti_pbc=true;
 
 
 
-gauge_gate1=gauge_gate(A,4,pi);
+gauge_gate1=gauge_gate(A,4,pi/4);
 @tensor A1[:]:=A1[-1,-2,-3,1,-5]*gauge_gate1[-4,1];
+@tensor A2[:]:=A2[-1,-2,-3,1,-5]*gauge_gate1[-4,1];
+@tensor A3[:]:=A3[-1,-2,-3,1,-5]*gauge_gate1[-4,1];
+@tensor A4[:]:=A4[-1,-2,-3,1,-5]*gauge_gate1[-4,1];
+
 
 #############################
 

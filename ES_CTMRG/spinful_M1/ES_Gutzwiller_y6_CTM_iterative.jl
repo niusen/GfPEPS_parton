@@ -15,7 +15,7 @@ include("D:\\My Documents\\Code\\Julia_codes\\Tensor network\\GfPEPS_parton\\ES_
 include("D:\\My Documents\\Code\\Julia_codes\\Tensor network\\GfPEPS_parton\\ES_CTMRG\\ES_algorithms.jl")
 
 
-chi=70
+chi=20
 tol=1e-6
 CTM_ite_nums=500;
 CTM_trun_tol=1e-10;
@@ -100,7 +100,7 @@ A_origin=deepcopy(A);
 
 
 y_anti_pbc=true;
-boundary_phase_y=0;
+boundary_phase_y=0.5;
 
 if y_anti_pbc
     gauge_gate1=gauge_gate(A,2,2*pi/6*boundary_phase_y);

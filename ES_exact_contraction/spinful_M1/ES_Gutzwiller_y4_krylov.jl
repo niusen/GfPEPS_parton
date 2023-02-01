@@ -94,7 +94,7 @@ A_origin=deepcopy(A);
 
 
 y_anti_pbc=true;
-boundary_phase_y=0.0;
+boundary_phase_y=0.5;
 
 if y_anti_pbc
     gauge_gate1=gauge_gate(A,2,2*pi/4*boundary_phase_y);
@@ -508,12 +508,21 @@ k_phase=vcat(k_phase_set1,k_phase_set2);
 Qn=vcat(Qn_set1,Qn_set2);
 Spin=vcat(Spin_set1,Spin_set2);
 
-matwrite("ES_Gutzwiller_M1_Nv4"*".mat", Dict(
-    "k_phase" => k_phase,
-    "eu" => eu,
-    "Qn"=>Qn,
-    "Spin"=>Spin
-); compress = false)
 
 
-
+if y_anti_pbc
+    matwrite("ES_Gutzwiller_M1_Nv4_APBC"*".mat", Dict(
+        "k_phase" => k_phase,
+        "eu" => eu,
+        "Qn"=>Qn,
+        "Spin"=>Spin
+    ); compress = false)
+else
+    matwrite("ES_Gutzwiller_M1_Nv4"*".mat", Dict(
+        "k_phase" => k_phase,
+        "eu" => eu,
+        "Qn"=>Qn,
+        "Spin"=>Spin
+    ); compress = false)
+end
+    

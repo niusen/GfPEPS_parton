@@ -84,14 +84,15 @@ A_origin=deepcopy(A);
 
 
 
-
-y_anti_pbc=true;
+y_anti_pbc=false;
 boundary_phase_y=0.5;
 
 if y_anti_pbc
     gauge_gate1=gauge_gate(A,2,2*pi/4*boundary_phase_y);
     @tensor A[:]:=A[-1,1,-3,-4,-5]*gauge_gate1[-2,1];
 end
+
+
 
 #############################
 # #convert to the order of PEPS code
@@ -101,6 +102,8 @@ A2=deepcopy(A);
 A3=deepcopy(A);
 A4=deepcopy(A);
 #############################
+
+
 
 V_odd,V_even=projector_virtual(space(A1,4))
 
@@ -671,16 +674,10 @@ VR=permute(VR,(2,4,6,8,1,3,5,7,9,));#L1,L2,L3,L4,L1',L2',L3',L4',dummy
 
 
 eu,ev=eig(H,(1,2,3,4,),(5,6,7,8,))
+Qn=Get_Vspace_Qn(space(eu,1)); Qn=Int.(Qn);
 eu=diag(convert(Array,eu));
 eu=eu/sum(eu)
-Qn=vcat(0*ones(1),-1*ones(8))
-Qn=vcat(Qn,-2*ones(28));
-Qn=vcat(Qn,-3*ones(56));
-Qn=vcat(Qn,-4*ones(70));
-Qn=vcat(Qn,-5*ones(56));
-Qn=vcat(Qn,-6*ones(28));
-Qn=vcat(Qn,-7*ones(8));
-Qn=vcat(Qn,-8*ones(1));
+
 println(sort(abs.(eu)))
 
 ev=permute(ev,(1,2,3,4,5,));#L1',L2',L3',L4',dummy

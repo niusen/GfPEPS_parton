@@ -86,7 +86,7 @@ A_origin=deepcopy(A);
 
 
 
-y_anti_pbc=false;
+y_anti_pbc=true;
 boundary_phase_y=0.5;
 
 if y_anti_pbc
@@ -101,6 +101,9 @@ A1=deepcopy(A);
 A2=deepcopy(A);
 A3=deepcopy(A);
 #############################
+
+
+
 
 V_odd,V_even=projector_virtual(space(A1,4))
 
@@ -561,6 +564,7 @@ VR=permute(VR,(2,4,6,1,3,5,7,));#L1,L2,L3,L1',L2',L3',dummy
 
 
 eu,ev=eig(H,(1,2,3,),(4,5,6,))
+Qn=Get_Vspace_Qn(space(eu,1)); Qn=Int.(Qn);
 eu=diag(convert(Array,eu));
 eu=eu/sum(eu)
 
