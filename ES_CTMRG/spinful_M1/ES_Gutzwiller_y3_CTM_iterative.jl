@@ -98,8 +98,8 @@ A_origin=deepcopy(A);
 
 
 
-y_anti_pbc=true;
-boundary_phase_y=0;
+y_anti_pbc=false;
+boundary_phase_y=0.5;
 
 if y_anti_pbc
     gauge_gate1=gauge_gate(A,2,2*pi/3*boundary_phase_y);
@@ -120,10 +120,8 @@ CTM, AA_fused, U_L,U_D,U_R,U_U=init_CTM(chi,A,"PBC",true);
 
 N=3;
 EH_n=20;
-#include("D:\\My Documents\\Code\\Julia_codes\\Tensor network\\GfPEPS_parton\\ES_CTMRG\\ES_algorithms.jl")
-
-
-ES_CTMRG_ED(CTM,U_L,U_D,U_R,U_U,M,chi,N,EH_n)
+decomp=false;
+ES_CTMRG_ED(CTM,U_L,U_D,U_R,U_U,M,chi,N,EH_n,decomp,y_anti_pbc)
 
 
 

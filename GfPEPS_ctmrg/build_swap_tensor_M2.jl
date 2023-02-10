@@ -17,7 +17,8 @@ Q=2*M+filling;#total number of physical and virtual fermions on a site;
 #size of W matrix: (P+4M, Q)
 #init_state="Hofstadter_N2_M"*string(M_initial)*".jld";#initialize: nothing
 #init_state="QWZ_M"*string(M)*".jld";#initialize: nothing
-init_state="C2_model1_M"*string(M)*".jld";#initialize: nothing
+#init_state="C2_model1_incorrect_M"*string(M)*".jld";#initialize: nothing
+init_state="C2_model1_correct_M"*string(M)*".jld";#initialize: nothing
 
 if M_initial==2
 

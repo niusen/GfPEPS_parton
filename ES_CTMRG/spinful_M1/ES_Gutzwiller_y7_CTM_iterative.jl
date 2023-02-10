@@ -15,7 +15,7 @@ include("D:\\My Documents\\Code\\Julia_codes\\Tensor network\\GfPEPS_parton\\ES_
 include("D:\\My Documents\\Code\\Julia_codes\\Tensor network\\GfPEPS_parton\\ES_CTMRG\\ES_algorithms.jl")
 
 
-chi=40
+chi=60
 tol=1e-6
 CTM_ite_nums=500;
 CTM_trun_tol=1e-10;
@@ -99,8 +99,8 @@ A_origin=deepcopy(A);
 
 
 
-y_anti_pbc=true;
-boundary_phase_y=0;
+y_anti_pbc=false;
+boundary_phase_y=0.5;
 
 if y_anti_pbc
     gauge_gate1=gauge_gate(A,2,2*pi/7*boundary_phase_y);
@@ -120,10 +120,8 @@ CTM, AA_fused, U_L,U_D,U_R,U_U=init_CTM(chi,A,"PBC",true);
 
 N=7;
 EH_n=30;
-include("D:\\My Documents\\Code\\Julia_codes\\Tensor network\\GfPEPS_parton\\ES_CTMRG\\ES_algorithms.jl")
+decomp=false;
+#ES_CTMRG_ED(CTM,U_L,U_D,U_R,U_U,M,chi,N,EH_n,decomp,y_anti_pbc);
 
-
-ES_CTMRG_ED(CTM,U_L,U_D,U_R,U_U,M,chi,N,EH_n);
-
-
+ES_CTMRG_ED_fixedQn(CTM,U_L,U_D,U_R,U_U,M,chi,N,EH_n,-8,-7,decomp,y_anti_pbc)
 

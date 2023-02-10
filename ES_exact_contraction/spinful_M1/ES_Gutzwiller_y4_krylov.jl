@@ -110,6 +110,12 @@ A3=deepcopy(A);
 A4=deepcopy(A);
 #############################
 
+# if y_anti_pbc
+#         gauge_gate1=gauge_gate(A1,4,2*pi*boundary_phase_y);
+#         @tensor A1[:]:=A1[-1,-2,-3,1,-5]*gauge_gate1[-4,1];
+# end
+
+
 println(space(A1,4))
 V_odd,V_even=projector_virtual(space(A1,4))
 #physical state only has even parity

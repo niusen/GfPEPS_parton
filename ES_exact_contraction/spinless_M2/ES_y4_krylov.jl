@@ -93,6 +93,12 @@ if y_anti_pbc
 end
 
 
+small_twist=0.001;
+gauge_gate1=gauge_gate(A,2,2*pi/4*small_twist);
+@tensor A[:]:=A[-1,1,-3,-4,-5]*gauge_gate1[-2,1];
+
+
+
 
 #############################
 # #convert to the order of PEPS code

@@ -97,11 +97,11 @@ A_origin=deepcopy(A);
 
 
 
-y_anti_pbc=true;
-boundary_phase_y=0;
+y_anti_pbc=false;
+boundary_phase_y=0.5;
 
 if y_anti_pbc
-    gauge_gate1=gauge_gate(A,2,2*pi/3*boundary_phase_y);
+    gauge_gate1=gauge_gate(A,2,2*pi/4*boundary_phase_y);
     @tensor A[:]:=A[-1,1,-3,-4,-5]*gauge_gate1[-2,1];
 end
 

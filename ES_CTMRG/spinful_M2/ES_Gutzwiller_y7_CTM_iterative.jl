@@ -144,9 +144,9 @@ conv_check="singular_value";
 CTM, AA_fused, U_L,U_D,U_R,U_U=init_CTM(chi,A,"PBC",true);
 @time CTM, AA_fused, U_L,U_D,U_R,U_U=CTMRG(AA_fused,chi,conv_check,tol,CTM,CTM_ite_nums,CTM_trun_tol);
 
-N=6;
+N=7;
 EH_n=30;
-decomp=false;
+decomp=true;
 ES_CTMRG_ED(CTM,U_L,U_D,U_R,U_U,M,chi,N,decomp,EH_n);
 
 

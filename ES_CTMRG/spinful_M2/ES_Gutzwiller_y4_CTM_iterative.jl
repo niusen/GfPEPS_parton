@@ -125,11 +125,11 @@ A_origin=deepcopy(A);
 
 
 
-y_anti_pbc=true;
-boundary_phase_y=0;
+y_anti_pbc=false;
+boundary_phase_y=0.5;
 
 if y_anti_pbc
-    gauge_gate1=gauge_gate(A,2,2*pi/3*boundary_phase_y);
+    gauge_gate1=gauge_gate(A,2,2*pi/4*boundary_phase_y);
     @tensor A[:]:=A[-1,1,-3,-4,-5]*gauge_gate1[-2,1];
 end
 
@@ -146,7 +146,8 @@ CTM, AA_fused, U_L,U_D,U_R,U_U=init_CTM(chi,A,"PBC",true);
 
 N=4;
 EH_n=30;
-ES_CTMRG_ED(CTM,U_L,U_D,U_R,U_U,M,chi,N,EH_n);
+decomp=false;
+ES_CTMRG_ED(CTM,U_L,U_D,U_R,U_U,M,chi,N,EH_n,decomp,y_anti_pbc);
 
 
 
