@@ -62,7 +62,7 @@ A_origin=deepcopy(A);
 
 
 
-y_anti_pbc=true;
+y_anti_pbc=false;
 boundary_phase_y=0.5;
 
 if y_anti_pbc
