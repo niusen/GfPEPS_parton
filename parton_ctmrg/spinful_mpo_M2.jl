@@ -18,8 +18,10 @@ Q=2*M+filling;#total number of physical and virtual fermions on a site;
 #size of W matrix: (P+4M, Q)
 #init_state="Hofstadter_N2_M"*string(M)*".jld";#initialize: nothing
 #init_state="QWZ_M"*string(M)*".jld";#initialize: nothing
-init_state="C2_model1_correct_M"*string(M)*".jld";#initialize: nothing
+#init_state="C2_model1_correct_M"*string(M)*".jld";#initialize: nothing
+init_state="C2_model1_correct_decoupled_M"*string(M)*".jld";#initialize: nothing
 #init_state="C2_model1_incorrect_M"*string(M)*".jld";#initialize: nothing
+#init_state="C2_model1_correct_modified_M"*string(M)*".jld";#initialize: nothing
 
 W=load(init_state)["W"];
 E0=load(init_state)["E0"];
@@ -156,3 +158,6 @@ SS_op_S=permute(SS_op_S,(1,2,),(3,4,))
 Schiral_op_S=permute(Schiral_op_S,(1,2,3,),(4,5,6,))
 
 save("swap_gate_Tensor_M2.jld2", "psi_G",psi_G, "bond",bond,"bond_gate",bond_gate, "SS_op_F",SS_op_F, "SS_op_S",SS_op_S, "P_G",P_G, "Schiral_op_F",Schiral_op_F, "Schiral_op_S",Schiral_op_S);
+
+
+
