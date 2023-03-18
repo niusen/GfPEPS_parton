@@ -103,6 +103,82 @@ function build_double_layer_swap(Ap,A)
     return AA_fused, U_L,U_D,U_R,U_U
 end
 
+function build_double_layer_NoSwap(Ap,A)
+    #display(space(A))
+
+    Ap=permute(Ap,(1,2,),(3,4,5))
+    A=permute(A,(1,2,),(3,4,5));
+    
+    # U_L=unitary(fuse(space(A, 1)' ⊗ space(A, 1)), space(A, 1)' ⊗ space(A, 1));
+    # U_D=unitary(fuse(space(A, 2)' ⊗ space(A, 2)), space(A, 2)' ⊗ space(A, 2));
+    # U_R=inv(U_L);
+    # U_U=inv(U_D);
+
+    # U_Lp=unitary(fuse(space(Ap, 1) ⊗ space(A, 1)), space(Ap, 1) ⊗ space(A, 1));
+    # U_Dp=unitary(fuse(space(Ap, 2) ⊗ space(A, 2)), space(Ap, 2) ⊗ space(A, 2));
+    # U_Rp=unitary(space(Ap, 3)' ⊗ space(A, 3)', fuse(space(Ap, 3)' ⊗ space(A, 3)'));
+    # U_Up=unitary(space(Ap, 4)' ⊗ space(A, 4)', fuse(space(Ap, 4)' ⊗ space(A, 4)'));
+
+    # println(norm(U_R-U_Rp)/norm(U_R))
+    # println(norm(U_L-U_Lp)/norm(U_L))
+    # println(norm(U_D-U_Dp)/norm(U_D))
+    # println(norm(U_U-U_Up)/norm(U_U))
+
+    U_L=unitary(fuse(space(Ap, 1) ⊗ space(A, 1)), space(Ap, 1) ⊗ space(A, 1));
+    U_D=unitary(fuse(space(Ap, 2) ⊗ space(A, 2)), space(Ap, 2) ⊗ space(A, 2));
+    U_R=unitary(space(Ap, 3)' ⊗ space(A, 3)', fuse(space(Ap, 3)' ⊗ space(A, 3)'));
+    U_U=unitary(space(Ap, 4)' ⊗ space(A, 4)', fuse(space(Ap, 4)' ⊗ space(A, 4)'));
+
+    # display(space(U_L))
+    # display(space(U_D))
+    # display(space(U_R))
+    # display(space(U_D))
+
+    uMp,sMp,vMp=tsvd(Ap);
+    uMp=uMp*sMp;
+    uM,sM,vM=tsvd(A);
+    uM=uM*sM;
+
+    uMp=permute(uMp,(1,2,3,),())
+    uM=permute(uM,(1,2,3,),())
+    Vp=space(uMp,3);
+    V=space(vM,1);
+    U=unitary(fuse(Vp' ⊗ V), Vp' ⊗ V);
+
+    @tensor double_LD[:]:=uMp[-1,-2,1]*U'[1,-3,-4];
+    @tensor double_LD[:]:=double_LD[-1,-3,1,-5]*uM[-2,-4,1];
+
+    vMp=permute(vMp,(1,2,3,4,),());
+    vM=permute(vM,(1,2,3,4,),());
+
+    @tensor double_RU[:]:=U[-1,-2,1]*vM[1,-3,-4,-5];
+    @tensor double_RU[:]:=vMp[1,-2,-4,2]*double_RU[-1,1,-3,-5,2];
+
+    #display(space(double_RU))
+
+    double_LD=permute(double_LD,(1,2,),(3,4,5,));
+    double_LD=U_L*double_LD;
+    double_LD=permute(double_LD,(2,3,),(1,4,));
+    double_LD=U_D*double_LD;
+    double_LD=permute(double_LD,(2,1,),(3,));
+    #display(space(double_LD))
+    double_RU=permute(double_RU,(1,4,5,),(2,3,));
+    double_RU=double_RU*U_R;
+    double_RU=permute(double_RU,(1,4,),(2,3,));
+    double_RU=double_RU*U_U;
+    double_LD=permute(double_LD,(1,2,),(3,));
+    double_RU=permute(double_RU,(1,),(2,3,));
+    AA_fused=double_LD*double_RU;
+
+
+    ##########################
+
+    AA_fused=permute(AA_fused,(1,2,3,4,));
+
+
+    return AA_fused, U_L,U_D,U_R,U_U
+end
+
 
 function fuse_CTM_legs(CTM,U_L,U_D,U_R,U_U)
     #fuse CTM legs
@@ -355,6 +431,11 @@ function CTM_ite(Cset, Tset, AA_fused, chi, direction, trun_tol,CTM_ite_info)
             sM_dense[c1,c1]=0;
         end
     end
+
+    # sM_dense_diag=sort(diag(sM_dense),rev=true);
+    # sM_dense_diag=sM_dense_diag/sM_dense_diag[1];
+    # println(sM_dense_diag)
+
     #display(sM_dense)
     #display(pinv.(sM_dense))
 
@@ -441,7 +522,11 @@ function init_CTM(chi,A,type,CTM_ite_info)
     end
     CTM=Dict([("Cset", Cset), ("Tset", Tset)]);
 
-    AA_fused, U_L,U_D,U_R,U_U=build_double_layer_swap(deepcopy(A'),deepcopy(A));
+    if Guztwiller
+        AA_fused, U_L,U_D,U_R,U_U=build_double_layer_NoSwap(deepcopy(A'),deepcopy(A));
+    else
+        AA_fused, U_L,U_D,U_R,U_U=build_double_layer_swap(deepcopy(A'),deepcopy(A));
+    end
     CTM=fuse_CTM_legs(CTM,U_L,U_D,U_R,U_U);
 
     return CTM, AA_fused, U_L,U_D,U_R,U_U
