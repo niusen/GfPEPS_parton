@@ -12,9 +12,9 @@ include("D:\\My Documents\\Code\\Julia_codes\\Tensor network\\GfPEPS_parton\\par
 
 M=1;#number of virtual mode
 distance=40;
-chi=20
+chi=120
 tol=1e-6
-Guztwiller=true;#add projector
+Guztwiller=false;#add projector
 
 
 
