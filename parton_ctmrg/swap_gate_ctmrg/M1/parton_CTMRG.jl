@@ -465,6 +465,74 @@ function CTM_ite(Cset, Tset, AA_fused, chi, direction, trun_tol,CTM_ite_info)
     return Cset,Tset
 end
 
+# function init_CTM(chi,A,type,CTM_ite_info)
+#     if CTM_ite_info
+#         display("initialize CTM")
+#     end
+#     #numind(A)
+#     #numin(A)
+#     #numout(A)
+#     CTM=[];
+#     Cset=Vector(undef,4);
+#     Tset=Vector(undef,4);
+#     #space(A,1)
+#     if type=="PBC"
+#         for direction=1:4
+#             inds=(mod1(2-direction,4),mod1(3-direction,4),mod1(4-direction,4),mod1(1-direction,4),5);
+#             A_rotate=permute(A,inds);
+#             Ap_rotate=A_rotate';
+
+#             @tensor M[:]:=Ap_rotate[1,-1,-3,2,3]*A_rotate[1,-2,-4,2,3];
+#             Cset[direction]=M;
+#             @tensor M[:]:=Ap_rotate[-1,-3,-5,1,2]*A_rotate[-2,-4,-6,1,2];
+#             Tset[direction]=M;
+#         end
+
+#         #fuse legs
+#         ul_set=Vector(undef,4);
+#         ur_set=Vector(undef,4);
+#         for direction=1:2
+#             ul_set[direction]=unitary(fuse(space(Cset[direction], 3) ⊗ space(Cset[direction], 4)), space(Cset[direction], 3) ⊗ space(Cset[direction], 4));
+#             ur_set[direction]=unitary(fuse(space(Tset[direction], 5) ⊗ space(Tset[direction], 6)), space(Tset[direction], 5) ⊗ space(Tset[direction], 6));
+#         end
+#         for direction=3:4
+#             ul_set[direction]=unitary(fuse(space(Cset[direction], 3) ⊗ space(Cset[direction], 4))', space(Cset[direction], 3) ⊗ space(Cset[direction], 4));
+#             ur_set[direction]=unitary(fuse(space(Tset[direction], 5) ⊗ space(Tset[direction], 6))', space(Tset[direction], 5) ⊗ space(Tset[direction], 6));
+#         end
+#         for direction=1:4
+#             C=Cset[direction];
+#             ul=ur_set[mod1(direction-1,4)];
+#             ur=ul_set[direction];
+#             ulp=permute(ul',(3,),(1,2,));
+#             urp=permute(ur',(3,),(1,2,));
+#             #@tensor Cnew[(-1);(-2)]:=ulp[-1,1,2]*C[1,2,3,4]*ur[-2,3,4]
+#             @tensor Cnew[:]:=ulp[-1,1,2]*C[1,2,3,4]*ur[-2,3,4];#put all indices in tone side so that its adjoint has the same index order
+#             Cset[direction]=Cnew;
+
+#             T=Tset[direction];
+#             ul=ul_set[direction];
+#             ur=ur_set[direction];
+#             ulp=permute(ul',(3,),(1,2,));
+#             urp=permute(ur',(3,),(1,2,));
+#             #@tensor Tnew[(-1);(-2,-3,-4)]:=ulp[-1,1,2]*T[1,2,-2,-3,3,4]*ur[-4,3,4]
+#             @tensor Tnew[:]:=ulp[-1,1,2]*T[1,2,-2,-3,3,4]*ur[-4,3,4];#put all indices in tone side so that its adjoint has the same index order
+#             Tset[direction]=Tnew;
+#         end
+#     elseif type=="random"
+#     end
+#     CTM=Dict([("Cset", Cset), ("Tset", Tset)]);
+
+#     if Guztwiller
+#         AA_fused, U_L,U_D,U_R,U_U=build_double_layer_NoSwap(deepcopy(A'),deepcopy(A));
+#     else
+#         AA_fused, U_L,U_D,U_R,U_U=build_double_layer_swap(deepcopy(A'),deepcopy(A));
+#     end
+#     CTM=fuse_CTM_legs(CTM,U_L,U_D,U_R,U_U);
+
+#     return CTM, AA_fused, U_L,U_D,U_R,U_U
+
+# end
+
 function init_CTM(chi,A,type,CTM_ite_info)
     if CTM_ite_info
         display("initialize CTM")
@@ -472,80 +540,96 @@ function init_CTM(chi,A,type,CTM_ite_info)
     #numind(A)
     #numin(A)
     #numout(A)
+
     CTM=[];
     Cset=Vector(undef,4);
     Tset=Vector(undef,4);
-    #space(A,1)
-    if type=="PBC"
-        for direction=1:4
-            inds=(mod1(2-direction,4),mod1(3-direction,4),mod1(4-direction,4),mod1(1-direction,4),5);
-            A_rotate=permute(A,inds);
-            Ap_rotate=A_rotate';
-
-            @tensor M[:]:=Ap_rotate[1,-1,-3,2,3]*A_rotate[1,-2,-4,2,3];
-            Cset[direction]=M;
-            @tensor M[:]:=Ap_rotate[-1,-3,-5,1,2]*A_rotate[-2,-4,-6,1,2];
-            Tset[direction]=M;
-        end
-
-        #fuse legs
-        ul_set=Vector(undef,4);
-        ur_set=Vector(undef,4);
-        for direction=1:2
-            ul_set[direction]=unitary(fuse(space(Cset[direction], 3) ⊗ space(Cset[direction], 4)), space(Cset[direction], 3) ⊗ space(Cset[direction], 4));
-            ur_set[direction]=unitary(fuse(space(Tset[direction], 5) ⊗ space(Tset[direction], 6)), space(Tset[direction], 5) ⊗ space(Tset[direction], 6));
-        end
-        for direction=3:4
-            ul_set[direction]=unitary(fuse(space(Cset[direction], 3) ⊗ space(Cset[direction], 4))', space(Cset[direction], 3) ⊗ space(Cset[direction], 4));
-            ur_set[direction]=unitary(fuse(space(Tset[direction], 5) ⊗ space(Tset[direction], 6))', space(Tset[direction], 5) ⊗ space(Tset[direction], 6));
-        end
-        for direction=1:4
-            C=Cset[direction];
-            ul=ur_set[mod1(direction-1,4)];
-            ur=ul_set[direction];
-            ulp=permute(ul',(3,),(1,2,));
-            urp=permute(ur',(3,),(1,2,));
-            #@tensor Cnew[(-1);(-2)]:=ulp[-1,1,2]*C[1,2,3,4]*ur[-2,3,4]
-            @tensor Cnew[:]:=ulp[-1,1,2]*C[1,2,3,4]*ur[-2,3,4];#put all indices in tone side so that its adjoint has the same index order
-            Cset[direction]=Cnew;
-
-            T=Tset[direction];
-            ul=ul_set[direction];
-            ur=ur_set[direction];
-            ulp=permute(ul',(3,),(1,2,));
-            urp=permute(ur',(3,),(1,2,));
-            #@tensor Tnew[(-1);(-2,-3,-4)]:=ulp[-1,1,2]*T[1,2,-2,-3,3,4]*ur[-4,3,4]
-            @tensor Tnew[:]:=ulp[-1,1,2]*T[1,2,-2,-3,3,4]*ur[-4,3,4];#put all indices in tone side so that its adjoint has the same index order
-            Tset[direction]=Tnew;
-        end
-    elseif type=="random"
-    end
-    CTM=Dict([("Cset", Cset), ("Tset", Tset)]);
 
     if Guztwiller
         AA_fused, U_L,U_D,U_R,U_U=build_double_layer_NoSwap(deepcopy(A'),deepcopy(A));
+    
+        if type=="PBC"
+            for direction=1:4
+                inds=(mod1(2-direction,4),mod1(3-direction,4),mod1(4-direction,4),mod1(1-direction,4),5);
+                A_rotate=permute(A,inds);
+                Ap_rotate=A_rotate';
+
+                @tensor M[:]:=Ap_rotate[1,-1,-3,2,3]*A_rotate[1,-2,-4,2,3];
+                Cset[direction]=M;
+                @tensor M[:]:=Ap_rotate[-1,-3,-5,1,2]*A_rotate[-2,-4,-6,1,2];
+                Tset[direction]=M;
+            end
+
+            #fuse legs
+            ul_set=Vector(undef,4);
+            ur_set=Vector(undef,4);
+            for direction=1:2
+                ul_set[direction]=unitary(fuse(space(Cset[direction], 3) ⊗ space(Cset[direction], 4)), space(Cset[direction], 3) ⊗ space(Cset[direction], 4));
+                ur_set[direction]=unitary(fuse(space(Tset[direction], 5) ⊗ space(Tset[direction], 6)), space(Tset[direction], 5) ⊗ space(Tset[direction], 6));
+            end
+            for direction=3:4
+                ul_set[direction]=unitary(fuse(space(Cset[direction], 3) ⊗ space(Cset[direction], 4))', space(Cset[direction], 3) ⊗ space(Cset[direction], 4));
+                ur_set[direction]=unitary(fuse(space(Tset[direction], 5) ⊗ space(Tset[direction], 6))', space(Tset[direction], 5) ⊗ space(Tset[direction], 6));
+            end
+            for direction=1:4
+                C=Cset[direction];
+                ul=ur_set[mod1(direction-1,4)];
+                ur=ul_set[direction];
+                ulp=permute(ul',(3,),(1,2,));
+                urp=permute(ur',(3,),(1,2,));
+                #@tensor Cnew[(-1);(-2)]:=ulp[-1,1,2]*C[1,2,3,4]*ur[-2,3,4]
+                @tensor Cnew[:]:=ulp[-1,1,2]*C[1,2,3,4]*ur[-2,3,4];#put all indices in tone side so that its adjoint has the same index order
+                Cset[direction]=Cnew;
+
+                T=Tset[direction];
+                ul=ul_set[direction];
+                ur=ur_set[direction];
+                ulp=permute(ul',(3,),(1,2,));
+                urp=permute(ur',(3,),(1,2,));
+                #@tensor Tnew[(-1);(-2,-3,-4)]:=ulp[-1,1,2]*T[1,2,-2,-3,3,4]*ur[-4,3,4]
+                @tensor Tnew[:]:=ulp[-1,1,2]*T[1,2,-2,-3,3,4]*ur[-4,3,4];#put all indices in tone side so that its adjoint has the same index order
+                Tset[direction]=Tnew;
+            end
+        elseif type=="random"
+        end
+        CTM=Dict([("Cset", Cset), ("Tset", Tset)]);
+        CTM=fuse_CTM_legs(CTM,U_L,U_D,U_R,U_U);
     else
         AA_fused, U_L,U_D,U_R,U_U=build_double_layer_swap(deepcopy(A'),deepcopy(A));
+
+        if type=="PBC"
+            @tensor C1[:]:=AA_fused[1,-1,-2,3]*U_R[2,2,1]*U_D[3,4,4];
+            @tensor C2[:]:=AA_fused[-1,-2,3,1]*U_D[1,2,2]*U_L[3,4,4];
+            @tensor C3[:]:=AA_fused[-2,3,1,-1]*U_L[1,2,2]*U_U[4,4,3];
+            @tensor C4[:]:=AA_fused[1,3,-1,-2]*U_R[2,2,1]*U_U[4,4,3];
+
+            @tensor T4[:]:=AA_fused[1,-1,-2,-3]*U_R[2,2,1];
+            @tensor T1[:]:=AA_fused[-1,-2,-3,1]*U_D[1,2,2];
+            @tensor T2[:]:=AA_fused[-2,-3,1,-1]*U_L[1,2,2];
+            @tensor T3[:]:=AA_fused[-3,1,-1,-2]*U_U[2,2,1];
+
+            Cset[1]=C1;
+            Cset[2]=C2;
+            Cset[3]=C3;
+            Cset[4]=C4;
+
+            Tset[1]=T1;
+            Tset[2]=T2;
+            Tset[3]=T3;
+            Tset[4]=T4;
+            
+
+        elseif type=="random"
+        end
+        CTM=Dict([("Cset", Cset), ("Tset", Tset)]);
+
+
+
     end
-    CTM=fuse_CTM_legs(CTM,U_L,U_D,U_R,U_U);
 
     return CTM, AA_fused, U_L,U_D,U_R,U_U
 
-
-    # #save initial CTM to compare with other codes
-    # @time CTM=init_CTM(10,PEPS_tensor,"PBC");
-    # matwrite("matfile.mat", Dict(
-    # 	"C1" => convert(Array,CTM["Cset"][1]),
-    # 	"C2" => convert(Array,CTM["Cset"][2]),
-    #     "C3" => convert(Array,CTM["Cset"][3]),
-    #     "C4" => convert(Array,CTM["Cset"][4]),
-    #     "T1" => convert(Array,CTM["Tset"][1]),
-    #     "T2" => convert(Array,CTM["Tset"][2]),
-    #     "T3" => convert(Array,CTM["Tset"][3]),
-    #     "T4" => convert(Array,CTM["Tset"][4])
-    # ); compress = false)
-
-    end;
+end
 
 function to_array_multiplet(S)
     ss=[];
