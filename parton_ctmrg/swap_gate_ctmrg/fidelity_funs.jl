@@ -40,9 +40,9 @@ function cal_fidelity(theta1,theta2,Gutzwiller,M,chi,tol,CTM_ite_nums,CTM_trun_t
 
     mat_filenm="fidelity_M"*string(M)*"_chi"*string(chi)*"_theta_"*string(theta1)*"_"*string(theta2)*".mat";
     matwrite(mat_filenm, Dict(
-        "ov11" => ov11,
-        "ov22" => ov22,
-        "ov12" => ov12,
+        "ov_11" => ov_11,
+        "ov_22" => ov_22,
+        "ov_12" => ov_12,
         "ov_total" => ov_total
     ); compress = false)
 end
