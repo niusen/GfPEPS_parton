@@ -64,6 +64,7 @@ function Entropy_finite_size(CTM,U_L,U_D,U_R,U_U,M,chi,N)
     Renyi2_even=-log(Renyi2/Norm^2);
 
     ###########################################
+    println("Alert: the odd sector acquires extra gate which has not been implemented")
     Projector=P_odd;
 
     @tensor OO_P[:]:=OO[-1,1,-3,2]*Projector[-2,2,-4,1];
@@ -132,7 +133,7 @@ function Topo_entropy_Renyi2(CTM,U_L,U_D,U_R,U_U,M,chi,N_eu)
     P_odd=TensorMap(P_odd, V⊗space(gate,1), V⊗space(gate,1));
 
 
-    
+    println("Alert: the odd sector acquires extra gate which has not been implemented")
 
     ###########################################
     println("calculate topo entropy for even sector");
