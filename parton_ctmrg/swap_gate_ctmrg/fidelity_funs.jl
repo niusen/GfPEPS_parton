@@ -2,7 +2,7 @@ using LinearAlgebra
 using TensorKit
 
 
-function cal_fidelity(theta1,theta2,Gutzwiller,M,chi,tol,CTM_ite_nums,CTM_trun_tol)
+function cal_fidelity(theta1,theta2,Gutzwiller,M,chi,tol,CTM_ite_nums,CTM_trun_tol,forced_steps)
     println("chi= "*string(chi));
 
     filenm1="/users/p1231/niu/Code/Julia_codes/Tensor_network/GfPEPS_parton/test_M2_projected_decoupled_rotated/theta_"*string(theta1)*"/swap_gate_Tensor_M2.jld2";
@@ -16,17 +16,17 @@ function cal_fidelity(theta1,theta2,Gutzwiller,M,chi,tol,CTM_ite_nums,CTM_trun_t
     #overlap between A1 and A2
     conv_check="singular_value";
     CTM, A1A2, U_L,U_D,U_R,U_U=init_CTM(chi,A1,A2,"PBC",true);
-    @time CTM12=CTMRG(A1A2,chi,conv_check,tol,CTM,CTM_ite_nums,CTM_trun_tol);
+    @time CTM12=CTMRG(A1A2,chi,conv_check,tol,CTM,CTM_ite_nums,CTM_trun_tol,forced_steps);
 
     #overlap between A1 and A1
     conv_check="singular_value";
     CTM, A1A1, U_L,U_D,U_R,U_U=init_CTM(chi,A1,A1,"PBC",true);
-    @time CTM11=CTMRG(A1A1,chi,conv_check,tol,CTM,CTM_ite_nums,CTM_trun_tol);
+    @time CTM11=CTMRG(A1A1,chi,conv_check,tol,CTM,CTM_ite_nums,CTM_trun_tol,forced_steps);
 
     #overlap between A2 and A2
     conv_check="singular_value";
     CTM, A2A2, U_L,U_D,U_R,U_U=init_CTM(chi,A2,A2,"PBC",true);
-    @time CTM22=CTMRG(A2A2,chi,conv_check,tol,CTM,CTM_ite_nums,CTM_trun_tol);
+    @time CTM22=CTMRG(A2A2,chi,conv_check,tol,CTM,CTM_ite_nums,CTM_trun_tol,forced_steps);
 
 
     ov_12=overlap_CTM(CTM12,A1A2);
@@ -74,7 +74,7 @@ function overlap_CTM(CTM,AA)
     ov_2x2=blocks(Norm)[(Irrep[U₁](0) ⊠ Irrep[SU₂](0))][1];
 
     ov_total=abs(ov_3x3*ov_2x2)/abs(ov_2x3*ov_3x2)
-    println("overlap is:"*string(ov_total))
+    #println("overlap is:"*string(ov_total))
     return ov_total
 end
 
@@ -485,7 +485,7 @@ function spectrum_conv_check(ss_old,C_new)
     return er,ss_new
 end
 
-function CTMRG(AA_fused,chi,conv_check,tol,CTM,CTM_ite_nums, CTM_trun_tol,CTM_ite_info=true,CTM_conv_info=false)
+function CTMRG(AA_fused,chi,conv_check,tol,CTM,CTM_ite_nums, CTM_trun_tol,forced_steps,CTM_ite_info=true,CTM_conv_info=false)
 
     #Ref: PHYSICAL REVIEW B 98, 235148 (2018)
     #initial corner transfer matrix
@@ -531,7 +531,15 @@ function CTMRG(AA_fused,chi,conv_check,tol,CTM,CTM_ite_nums, CTM_trun_tol,CTM_it
     end
     ite_num=0;
     ite_err=1;
-    for ci=1:CTM_ite_nums
+
+    #define number of steps
+    if forced_steps==nothing
+        total_steps=CTM_ite_nums;
+    else
+        total_steps=forced_steps
+    end
+
+    for ci=1:total_steps
         ite_num=ci;
         #direction_order=[1,2,3,4];
         #direction_order=[4,1,2,3];
@@ -571,10 +579,17 @@ function CTMRG(AA_fused,chi,conv_check,tol,CTM,CTM_ite_nums, CTM_trun_tol,CTM_it
 
             er=maximum([er1,er2,er3,er4]);
             ite_err=er;
+
+            CTM_temp=deepcopy(CTM);
+            CTM_temp["Cset"]=Cset;
+            CTM_temp["Tset"]=Tset;
+            Ov=overlap_CTM(CTM_temp,AA_fused);
+
             if CTM_ite_info
-                println("CTMRG iteration: "*string(ci)*", CTMRG err: "*string(er));flush(stdout);
+                println("CTMRG iteration: "*string(ci)*", CTMRG err: "*string(er)*",  overlap= "*string(Ov));flush(stdout);
             end
-            if er<tol
+            
+            if (er<tol)&(forced_steps==nothing)
                 break;
             end
             ss_old1=ss_new1;
@@ -911,5 +926,8 @@ end
 #     # @assert 1+1==3
 #     return s
 # end
+
+
+
 
 

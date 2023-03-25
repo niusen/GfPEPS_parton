@@ -10,11 +10,14 @@ include("swap_funs.jl")
 include("D:\\My Documents\\Code\\Julia_codes\\Tensor network\\GfPEPS_parton\\parton_ctmrg\\mpo_mps_funs.jl")
 
 
+swap_gate_double_layer=true;
+
+
 M=1;#number of virtual mode
 distance=40;
-chi=120
+chi=40
 tol=1e-6
-Guztwiller=false;#add projector
+Guztwiller=true;#add projector
 
 
 
@@ -106,7 +109,7 @@ A_fused=A;
 
 
 conv_check="singular_value";
-CTM, AA_fused, U_L,U_D,U_R,U_U=init_CTM(chi,A_fused,"PBC",true);
+CTM, AA_fused, U_L,U_D,U_R,U_U=init_CTM(chi,A_fused,"PBC",true,swap_gate_double_layer);
 @time CTM, AA_fused, U_L,U_D,U_R,U_U=CTMRG(AA_fused,chi,conv_check,tol,CTM,CTM_ite_nums,CTM_trun_tol);
 
 display(space(CTM["Cset"][1]))
@@ -142,11 +145,19 @@ end
 
 println("construct double layer tensor with operator");flush(stdout);
 if Guztwiller
-    AA_SS=build_double_layer_NoSwap_op(A_fused,SS_cell,false);
-    AA_SAL=build_double_layer_NoSwap_op(A_fused,SA_left,true);
-    AA_SBL=build_double_layer_NoSwap_op(A_fused,SB_left,true);
-    AA_SAR=build_double_layer_NoSwap_op(A_fused,SA_right,true);
-    AA_SBR=build_double_layer_NoSwap_op(A_fused,SB_right,true);
+    if swap_gate_double_layer
+        AA_SS=build_double_layer_swap_op(A_fused,SS_cell,false);
+        AA_SAL=build_double_layer_swap_op(A_fused,SA_left,true);
+        AA_SBL=build_double_layer_swap_op(A_fused,SB_left,true);
+        AA_SAR=build_double_layer_swap_op(A_fused,SA_right,true);
+        AA_SBR=build_double_layer_swap_op(A_fused,SB_right,true);
+    else 
+        AA_SS=build_double_layer_NoSwap_op(A_fused,SS_cell,false);
+        AA_SAL=build_double_layer_NoSwap_op(A_fused,SA_left,true);
+        AA_SBL=build_double_layer_NoSwap_op(A_fused,SB_left,true);
+        AA_SAR=build_double_layer_NoSwap_op(A_fused,SA_right,true);
+        AA_SBR=build_double_layer_NoSwap_op(A_fused,SB_right,true);
+    end
 else
     AA_SS=build_double_layer_swap_op(A_fused,SS_cell,false);
     AA_SAL=build_double_layer_swap_op(A_fused,SA_left,true);

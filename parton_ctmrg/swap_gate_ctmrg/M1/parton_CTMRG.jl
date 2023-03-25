@@ -533,7 +533,7 @@ end
 
 # end
 
-function init_CTM(chi,A,type,CTM_ite_info)
+function init_CTM(chi,A,type,CTM_ite_info,swap_gate_double_layer)
     if CTM_ite_info
         display("initialize CTM")
     end
@@ -546,7 +546,11 @@ function init_CTM(chi,A,type,CTM_ite_info)
     Tset=Vector(undef,4);
 
     if Guztwiller
-        AA_fused, U_L,U_D,U_R,U_U=build_double_layer_NoSwap(deepcopy(A'),deepcopy(A));
+        if swap_gate_double_layer
+            AA_fused, U_L,U_D,U_R,U_U=build_double_layer_swap(deepcopy(A'),deepcopy(A));
+        else
+            AA_fused, U_L,U_D,U_R,U_U=build_double_layer_NoSwap(deepcopy(A'),deepcopy(A));
+        end
     
         if type=="PBC"
             for direction=1:4
@@ -595,7 +599,9 @@ function init_CTM(chi,A,type,CTM_ite_info)
         CTM=Dict([("Cset", Cset), ("Tset", Tset)]);
         CTM=fuse_CTM_legs(CTM,U_L,U_D,U_R,U_U);
     else
+
         AA_fused, U_L,U_D,U_R,U_U=build_double_layer_swap(deepcopy(A'),deepcopy(A));
+
 
         if type=="PBC"
             @tensor C1[:]:=AA_fused[1,-1,-2,3]*U_R[2,2,1]*U_D[3,4,4];

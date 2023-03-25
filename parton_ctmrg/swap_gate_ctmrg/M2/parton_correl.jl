@@ -9,7 +9,7 @@ include("D:\\My Documents\\Code\\Julia_codes\\Tensor network\\GfPEPS_parton\\par
 include("swap_funs.jl")
 include("D:\\My Documents\\Code\\Julia_codes\\Tensor network\\GfPEPS_parton\\parton_ctmrg\\mpo_mps_funs.jl")
 
-
+swap_gate_double_layer=true;
 M=2;#number of virtual mode
 distance=10;
 chi=20
@@ -131,7 +131,7 @@ A_fused=A;
 
 
 conv_check="singular_value";
-CTM, AA_fused, U_L,U_D,U_R,U_U=init_CTM(chi,A_fused,"PBC",true);
+CTM, AA_fused, U_L,U_D,U_R,U_U=init_CTM(chi,A_fused,"PBC",true,swap_gate_double_layer);
 
 @time CTM, AA_fused, U_L,U_D,U_R,U_U=CTMRG(AA_fused,chi,conv_check,tol,CTM,CTM_ite_nums,CTM_trun_tol);
 
@@ -155,18 +155,26 @@ vm=sm*vm;vm=permute(vm,(2,3,),(1,));
 @tensor SA_right[:]:=vm[1,4,-3]*U_phy1[-1,3,1,2]*U_phy1'[3,4,2,-2];
 @tensor SB_right[:]:=vm[2,5,-3]*U_phy1[-1,3,1,2]*U_phy1'[3,1,5,-2];
 
-if M==1        
-    @tensor SS_cell[:]:=SS_cell[3,4]*U_phy2[-1,3,1,2]*U_phy2'[4,1,2,-2];
-    @tensor SA_left[:]:=SA_left[3,4,-3]*U_phy2[-1,3,1,2]*U_phy2'[4,1,2,-2];
-    @tensor SB_left[:]:=SB_left[3,4,-3]*U_phy2[-1,3,1,2]*U_phy2'[4,1,2,-2];
-    @tensor SA_right[:]:=SA_right[3,4,-3]*U_phy2[-1,3,1,2]*U_phy2'[4,1,2,-2];
-    @tensor SB_right[:]:=SB_right[3,4,-3]*U_phy2[-1,3,1,2]*U_phy2'[4,1,2,-2];
-elseif M==2
-    @tensor SS_cell[:]:=SS_cell[3,4]*U_phy2[-1,3,1,2,5,6]*U_phy2'[4,1,2,5,6,-2];
-    @tensor SA_left[:]:=SA_left[3,4,-3]*U_phy2[-1,3,1,2,5,6]*U_phy2'[4,1,2,5,6,-2];
-    @tensor SB_left[:]:=SB_left[3,4,-3]*U_phy2[-1,3,1,2,5,6]*U_phy2'[4,1,2,5,6,-2];
-    @tensor SA_right[:]:=SA_right[3,4,-3]*U_phy2[-1,3,1,2,5,6]*U_phy2'[4,1,2,5,6,-2];
-    @tensor SB_right[:]:=SB_right[3,4,-3]*U_phy2[-1,3,1,2,5,6]*U_phy2'[4,1,2,5,6,-2];
+if Guztwiller
+    if swap_gate_double_layer
+        AA_SS=build_double_layer_swap_op(A_fused,SS_cell,false);
+        AA_SAL=build_double_layer_swap_op(A_fused,SA_left,true);
+        AA_SBL=build_double_layer_swap_op(A_fused,SB_left,true);
+        AA_SAR=build_double_layer_swap_op(A_fused,SA_right,true);
+        AA_SBR=build_double_layer_swap_op(A_fused,SB_right,true);
+    else 
+        AA_SS=build_double_layer_NoSwap_op(A_fused,SS_cell,false);
+        AA_SAL=build_double_layer_NoSwap_op(A_fused,SA_left,true);
+        AA_SBL=build_double_layer_NoSwap_op(A_fused,SB_left,true);
+        AA_SAR=build_double_layer_NoSwap_op(A_fused,SA_right,true);
+        AA_SBR=build_double_layer_NoSwap_op(A_fused,SB_right,true);
+    end
+else
+    AA_SS=build_double_layer_swap_op(A_fused,SS_cell,false);
+    AA_SAL=build_double_layer_swap_op(A_fused,SA_left,true);
+    AA_SBL=build_double_layer_swap_op(A_fused,SB_left,true);
+    AA_SAR=build_double_layer_swap_op(A_fused,SA_right,true);
+    AA_SBR=build_double_layer_swap_op(A_fused,SB_right,true);
 end
 
 println("construct double layer tensor with operator");flush(stdout);
