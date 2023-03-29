@@ -1,316 +1,6 @@
 using LinearAlgebra
 using TensorKit
 
-function cal_fidelity_MPS(theta1,theta2,Gutzwiller,M,chi,tol,CTM_ite_nums,CTM_trun_tol,forced_steps,swap_gate_double_layer)
-    println("chi= "*string(chi));
-
-    filenm1="/users/p1231/niu/Code/Julia_codes/Tensor_network/GfPEPS_parton/test_M2_projected_decoupled_rotated/theta_"*string(theta1)*"/swap_gate_Tensor_M2.jld2";
-    filenm2="/users/p1231/niu/Code/Julia_codes/Tensor_network/GfPEPS_parton/test_M2_projected_decoupled_rotated/theta_"*string(theta2)*"/swap_gate_Tensor_M2.jld2";
-
-    
-    A1=load_state(filenm1,M,Gutzwiller);
-    A2=load_state(filenm2,M,Gutzwiller);
-
-    #overlap between A1 and A2
-    conv_check="singular_value";
-    CTM, A1A2, U_L,U_D,U_R,U_U=init_CTM(chi,A1,A2,"PBC",true,swap_gate_double_layer);
-    @time CTM12=CTMRG(A1A2,chi,conv_check,tol,CTM,CTM_ite_nums,CTM_trun_tol,forced_steps);
-
-    #overlap between A1 and A1
-    conv_check="singular_value";
-    CTM, A1A1, U_L,U_D,U_R,U_U=init_CTM(chi,A1,A1,"PBC",true,swap_gate_double_layer);
-    @time CTM11=CTMRG(A1A1,chi,conv_check,tol,CTM,CTM_ite_nums,CTM_trun_tol,forced_steps);
-
-    #overlap between A2 and A2
-    conv_check="singular_value";
-    CTM, A2A2, U_L,U_D,U_R,U_U=init_CTM(chi,A2,A2,"PBC",true,swap_gate_double_layer);
-    @time CTM22=CTMRG(A2A2,chi,conv_check,tol,CTM,CTM_ite_nums,CTM_trun_tol,forced_steps);
-
-
-    ova_12,ovb_12=overlap_CTM_MPS(CTM12,A1A2);
-    ova_11,ovb_11=overlap_CTM_MPS(CTM11,A1A1);
-    ova_22,ovb_22=overlap_CTM_MPS(CTM22,A2A2);
-
-    ova_total=ova_12/sqrt(ova_11*ova_22);
-    ovb_total=ovb_12/sqrt(ovb_11*ovb_22);
-
-    println("Normalized overlap a: "*string(ova_total));flush(stdout);
-    println("Normalized overlap b: "*string(ovb_total));flush(stdout);
-
-    mat_filenm="fidelity_CTM_MPS_M"*string(M)*"_chi"*string(chi)*"_theta_"*string(theta1)*"_"*string(theta2)*".mat";
-    matwrite(mat_filenm, Dict(
-        "ova_11" => ova_11,
-        "ova_22" => ova_22,
-        "ova_12" => ova_12,
-        "ova_total" => ova_total,
-        "ovb_11" => ovb_11,
-        "ovb_22" => ovb_22,
-        "ovb_12" => ovb_12,
-        "ovb_total" => ovb_total,
-    ); compress = false)
-end
-
-
-function cal_fidelity(theta1,theta2,Gutzwiller,M,chi,tol,CTM_ite_nums,CTM_trun_tol,forced_steps,swap_gate_double_layer)
-    println("chi= "*string(chi));
-
-    filenm1="/users/p1231/niu/Code/Julia_codes/Tensor_network/GfPEPS_parton/test_M2_projected_decoupled_rotated/theta_"*string(theta1)*"/swap_gate_Tensor_M2.jld2";
-    filenm2="/users/p1231/niu/Code/Julia_codes/Tensor_network/GfPEPS_parton/test_M2_projected_decoupled_rotated/theta_"*string(theta2)*"/swap_gate_Tensor_M2.jld2";
-
-    
-    A1=load_state(filenm1,M,Gutzwiller);
-    A2=load_state(filenm2,M,Gutzwiller);
-
-    #overlap between A1 and A2
-    conv_check="singular_value";
-    CTM, A1A2, U_L,U_D,U_R,U_U=init_CTM(chi,A1,A2,"PBC",true,swap_gate_double_layer);
-    @time CTM12=CTMRG(A1A2,chi,conv_check,tol,CTM,CTM_ite_nums,CTM_trun_tol,forced_steps);
-
-    #overlap between A1 and A1
-    conv_check="singular_value";
-    CTM, A1A1, U_L,U_D,U_R,U_U=init_CTM(chi,A1,A1,"PBC",true,swap_gate_double_layer);
-    @time CTM11=CTMRG(A1A1,chi,conv_check,tol,CTM,CTM_ite_nums,CTM_trun_tol,forced_steps);
-
-    #overlap between A2 and A2
-    conv_check="singular_value";
-    CTM, A2A2, U_L,U_D,U_R,U_U=init_CTM(chi,A2,A2,"PBC",true,swap_gate_double_layer);
-    @time CTM22=CTMRG(A2A2,chi,conv_check,tol,CTM,CTM_ite_nums,CTM_trun_tol,forced_steps);
-
-
-    ov_12=overlap_CTM(CTM12,A1A2);
-    ov_11=overlap_CTM(CTM11,A1A1);
-    ov_22=overlap_CTM(CTM22,A2A2);
-
-    ov_total=ov_12/sqrt(ov_11*ov_22);
-
-
-    println("Normalized overlap: "*string(ov_total));flush(stdout);
-
-    mat_filenm="fidelity_CTM_M"*string(M)*"_chi"*string(chi)*"_theta_"*string(theta1)*"_"*string(theta2)*".mat";
-    matwrite(mat_filenm, Dict(
-        "ov_11" => ov_11,
-        "ov_22" => ov_22,
-        "ov_12" => ov_12,
-        "ov_total" => ov_total
-    ); compress = false)
-end
-
-
-
-function overlap_CTM(CTM,AA)
-    #arXiv:1711.04798    figure7
-    Cset=CTM["Cset"];
-    Tset=CTM["Tset"];
-
-    #3x3 term
-    @tensor envL[:]:=Cset[1][1,-1]*Tset[4][2,-2,1]*Cset[4][-3,2];
-    @tensor envR[:]:=Cset[2][-1,1]*Tset[2][1,-2,2]*Cset[3][2,-3];
-    @tensor envL[:]:=envL[1,2,4]*Tset[1][1,3,-1]*AA[2,5,-2,3]*Tset[3][-3,5,4];
-    @tensor Norm[:]:=envL[1,2,3]*envR[1,2,3];
-    ov_3x3=blocks(Norm)[(Irrep[U₁](0) ⊠ Irrep[SU₂](0))][1];
-
-    #2x3 term
-    @tensor Norm[:]:=Cset[1][2,1]*Cset[2][5,7]*Cset[3][7,6]*Cset[4][3,2]*Tset[1][1,4,5]*Tset[3][6,4,3];
-    ov_2x3=blocks(Norm)[(Irrep[U₁](0) ⊠ Irrep[SU₂](0))][1];
-
-    #3x2 term
-    @tensor Norm[:]:=Cset[1][1,2]*Cset[2][2,3]*Cset[3][6,7]*Cset[4][7,5]*Tset[2][3,4,6]*Tset[4][5,4,1];
-    ov_3x2=blocks(Norm)[(Irrep[U₁](0) ⊠ Irrep[SU₂](0))][1];
-
-    #2x2 term
-    @tensor Norm[:]:=Cset[1][1,2]*Cset[2][2,3]*Cset[3][3,4]*Cset[4][4,1];
-    ov_2x2=blocks(Norm)[(Irrep[U₁](0) ⊠ Irrep[SU₂](0))][1];
-
-    ov_total=abs(ov_3x3*ov_2x2)/abs(ov_2x3*ov_3x2)
-    #println("overlap is:"*string(ov_total))
-    return ov_total
-end
-
-function overlap_CTM_MPS(CTM,AA)
-
-    Cset=CTM["Cset"];
-    Tset=CTM["Tset"];
-
-    eua1,eua2=solve_correl_length(Tset[1],Tset[3],AA);
-    eub1,eub2=solve_correl_length(Tset[1],permute(Tset[1]',(3,2,1,),()),AA);
-
-    println("eua1: "*string(eua1))
-    println("eua2: "*string(eua2))
-    println("eub1: "*string(eub1))
-    println("eub2: "*string(eub2))
-    return abs(eua1/eua2), abs(eub1/eub2)
-end
-
-
-
-function load_state(filenm,M,Gutzwiller)
-    data=load(filenm)
-    if M==1
-        P_G=data["P_G"];
-
-        psi_G=data["psi_G"];   #P1,P2,L,R,D,U
-        M1=psi_G[1];
-        M2=psi_G[2];
-        M3=psi_G[3];
-        M4=psi_G[4];
-        M5=psi_G[5];
-        M6=psi_G[6];
-
-        if Gutzwiller
-            @tensor M1[:]:=M1[-1,-2,1]*P_G[-3,1];
-            @tensor M2[:]:=M2[-1,-2,1]*P_G[-3,1];
-            SS_op=data["SS_op_S"];
-        else
-            SS_op=data["SS_op_F"];
-        end
-
-
-        U_phy1=unitary(fuse(space(M1,1)⊗space(M1,3)⊗space(M2,3)), space(M1,1)⊗space(M1,3)⊗space(M2,3));
-
-        @tensor A[:]:=M1[4,1,2]*M2[1,-2,3]*U_phy1[-1,4,2,3];
-        @tensor A[:]:=A[-1,1]*M3[1,-3,-2];
-        @tensor A[:]:=A[-1,-2,1]*M4[1,-4,-3];
-        @tensor A[:]:=A[-1,-2,-3,1]*M5[1,-5,-4];
-        @tensor A[:]:=A[-1,-2,-3,-4,1]*M6[1,-6,-5];
-
-        U_phy2=unitary(fuse(space(A,1)⊗space(A,6)), space(A,1)⊗space(A,6));
-        @tensor A[:]:=A[1,-2,-3,-4,-5,2]*U_phy2[-1,1,2];
-        # P,L,R,D,U
-
-
-        bond=data["bond_gate"];#dummy, D1, D2 
-
-        #Add bond:both parity gate and bond operator
-        @tensor A[:]:=A[-1,-2,1,2,-5]*bond[-6,-3,1]*bond[-7,-4,2];
-        U_phy2=unitary(fuse(space(A,1)⊗space(A,6)⊗space(A,7)), space(A,1)⊗space(A,6)⊗space(A,7));
-        @tensor A[:]:=A[1,-2,-3,-4,-5,2,3]*U_phy2[-1,1,2,3];
-        #P,L,R,D,U
-
-
-        #swap between spin up and spin down modes, since |L,U,P><D,R|====L,U,P|><|R,D
-        special_gate=special_parity_gate(A,3);
-        @tensor A[:]:=A[-1,-2,1,-4,-5]*special_gate[-3,1];
-        special_gate=special_parity_gate(A,4);
-        @tensor A[:]:=A[-1,-2,-3,1,-5]*special_gate[-4,1];
-
-
-
-        gate=swap_gate(A,4,5); @tensor A[:]:=A[-1,-2,-3,1,2]*gate[-4,-5,1,2];           
-        A=permute(A,(1,2,3,5,4,));#P,L,R,U,D
-
-        gate=swap_gate(A,3,4); @tensor A[:]:=A[-1,-2,1,2,-5]*gate[-3,-4,1,2]; 
-        A=permute(A,(1,2,4,3,5,));#P,L,U,R,D
-
-        gate=swap_gate(A,1,2); @tensor A[:]:=A[1,2,-3,-4,-5]*gate[-1,-2,1,2]; 
-        A=permute(A,(2,1,3,4,5,));#L,P,U,R,D
-
-        gate=swap_gate(A,2,3); @tensor A[:]:=A[-1,1,2,-4,-5]*gate[-2,-3,1,2]; 
-        A=permute(A,(1,3,2,4,5,));#L,U,P,R,D
-
-        #convention of fermionic PEPS: |L,U,P><D,R|====L,U,P|><|R,D
-
-
-        #convert to the order of PEPS code
-        A=permute(A,(1,5,4,2,3,));
-
-    elseif M==2
-        P_G=data["P_G"];
-        
-        psi_G=data["psi_G"];   #P1,P2,L,R,D,U
-        M1=psi_G[1];
-        M2=psi_G[2];
-        M3=psi_G[3];
-        M4=psi_G[4];
-        M5=psi_G[5];
-        M6=psi_G[6];
-        M7=psi_G[7];
-        M8=psi_G[8];
-        M9=psi_G[9];
-        M10=psi_G[10];
-        
-        if Gutzwiller
-            @tensor M1[:]:=M1[-1,-2,1]*P_G[-3,1];
-            @tensor M2[:]:=M2[-1,-2,1]*P_G[-3,1];
-            SS_op=data["SS_op_S"];
-        else
-            SS_op=data["SS_op_F"];
-        end
-        
-        U_phy1=unitary(fuse(space(M1,1)⊗space(M1,3)⊗space(M2,3)), space(M1,1)⊗space(M1,3)⊗space(M2,3));
-        
-        @tensor A[:]:=M1[4,1,2]*M2[1,-2,3]*U_phy1[-1,4,2,3];
-        @tensor A[:]:=A[-1,1]*M3[1,-3,-2];
-        @tensor A[:]:=A[-1,-2,1]*M4[1,-4,-3];
-        @tensor A[:]:=A[-1,-2,-3,1]*M5[1,-5,-4];
-        @tensor A[:]:=A[-1,-2,-3,-4,1]*M6[1,-6,-5];
-        @tensor A[:]:=A[-1,-2,-3,-4,-5,1]*M7[1,-7,-6];
-        @tensor A[:]:=A[-1,-2,-3,-4,-5,-6,1]*M8[1,-8,-7];
-        @tensor A[:]:=A[-1,-2,-3,-4,-5,-6,-7,1]*M9[1,-9,-8];
-        @tensor A[:]:=A[-1,-2,-3,-4,-5,-6,-7,-8,1]*M10[1,-10,-9];
-        
-        U_phy_dummy=unitary(fuse(space(A,1)⊗space(A,10)), space(A,1)⊗space(A,10));#this doesn't do anything
-        @tensor A[:]:=A[1,-2,-3,-4,-5,-6,-7,-8,-9,2]*U_phy_dummy[-1,1,2];
-        # P,L,R,D,U
-        
-        
-        bond=data["bond_gate"];#dummy, D1, D2 
-        
-        #Add bond:both parity gate and bond operator
-        @tensor A[:]:=A[-1,-6,-7,1,2,3,4,-12,-13]*bond[-2,-8,1]*bond[-3,-9,2]*bond[-4,-10,3]*bond[-5,-11,4];
-        
-        U_phy2=unitary(fuse(space(A,1)⊗space(A,2)⊗space(A,3)⊗space(A,4)⊗space(A,5)), space(A,1)⊗space(A,2)⊗space(A,3)⊗space(A,4)⊗space(A,5));
-        @tensor A[:]:=A[1,2,3,4,5,-2,-3,-4,-5,-6,-7,-8,-9]*U_phy2[-1,1,2,3,4,5];
-        #P,L,R,D,U
-        
-        
-        
-        #swap between spin up and spin down modes, since |L,U,P><D,R|====L,U,P|><|R,D
-        special_gate=special_parity_gate(A,4);
-        @tensor A[:]:=A[-1,-2,-3,1,-5,-6,-7,-8,-9]*special_gate[-4,1];
-        @tensor A[:]:=A[-1,-2,-3,-4,1,-6,-7,-8,-9]*special_gate[-5,1];
-        @tensor A[:]:=A[-1,-2,-3,-4,-5,1,-7,-8,-9]*special_gate[-6,1];
-        @tensor A[:]:=A[-1,-2,-3,-4,-5,-6,1,-8,-9]*special_gate[-7,1];
-        
-        gate=swap_gate(A,4,5);@tensor A[:]:=A[-1,-2,-3,1,2,-6,-7,-8,-9]*gate[-4,-5,1,2];  
-        gate=swap_gate(A,6,7);@tensor A[:]:=A[-1,-2,-3,-4,-5,1,2,-8,-9]*gate[-6,-7,1,2];  
-        
-        
-        
-        #group virtual legs on the same legs
-        U1=unitary(fuse(space(A,2)⊗space(A,3)),space(A,2)⊗space(A,3)); 
-        U2=unitary(fuse(space(A,8)⊗space(A,9)),space(A,8)⊗space(A,9));
-        @tensor A[:]:=A[-1,1,2,-3,-4,-5,-6,-7,-8]*U1[-2,1,2];
-        @tensor A[:]:=A[-1,-2,1,2,-4,-5,-6,-7]*U2'[1,2,-3];
-        @tensor A[:]:=A[-1,-2,-3,1,2,-5,-6]*U1'[1,2,-4];
-        @tensor A[:]:=A[-1,-2,-3,-4,1,2]*U2[-5,1,2];
-        
-        
-        
-        A1=deepcopy(A);
-        
-        
-        gate=swap_gate(A,4,5); @tensor A[:]:=A[-1,-2,-3,1,2]*gate[-4,-5,1,2];           
-        A=permute(A,(1,2,3,5,4,));#P,L,R,U,D
-        
-        gate=swap_gate(A,3,4); @tensor A[:]:=A[-1,-2,1,2,-5]*gate[-3,-4,1,2]; 
-        A=permute(A,(1,2,4,3,5,));#P,L,U,R,D
-        
-        gate=swap_gate(A,1,2); @tensor A[:]:=A[1,2,-3,-4,-5]*gate[-1,-2,1,2]; 
-        A=permute(A,(2,1,3,4,5,));#L,P,U,R,D
-        
-        gate=swap_gate(A,2,3); @tensor A[:]:=A[-1,1,2,-4,-5]*gate[-2,-3,1,2]; 
-        A=permute(A,(1,3,2,4,5,));#L,U,P,R,D
-        
-        #convention of fermionic PEPS: |L,U,P><D,R|====L,U,P|><|R,D
-        
-        
-        #convert to the order of PEPS code
-        A=permute(A,(1,5,4,2,3,));
-        
-    end
-
-    return A
-end
 
 function build_double_layer_swap(Ap,A)
     #display(space(A))
@@ -548,7 +238,7 @@ function spectrum_conv_check(ss_old,C_new)
     return er,ss_new
 end
 
-function CTMRG(AA_fused,chi,conv_check,tol,CTM,CTM_ite_nums, CTM_trun_tol,forced_steps,CTM_ite_info=true,CTM_conv_info=false)
+function CTMRG(AA_fused,chi,conv_check,tol,CTM,CTM_ite_nums, CTM_trun_tol,CTM_ite_info=true,CTM_conv_info=false)
 
     #Ref: PHYSICAL REVIEW B 98, 235148 (2018)
     #initial corner transfer matrix
@@ -594,15 +284,7 @@ function CTMRG(AA_fused,chi,conv_check,tol,CTM,CTM_ite_nums, CTM_trun_tol,forced
     end
     ite_num=0;
     ite_err=1;
-
-    #define number of steps
-    if forced_steps==nothing
-        total_steps=CTM_ite_nums;
-    else
-        total_steps=forced_steps
-    end
-
-    for ci=1:total_steps
+    for ci=1:CTM_ite_nums
         ite_num=ci;
         #direction_order=[1,2,3,4];
         #direction_order=[4,1,2,3];
@@ -642,17 +324,10 @@ function CTMRG(AA_fused,chi,conv_check,tol,CTM,CTM_ite_nums, CTM_trun_tol,forced
 
             er=maximum([er1,er2,er3,er4]);
             ite_err=er;
-
-            CTM_temp=deepcopy(CTM);
-            CTM_temp["Cset"]=Cset;
-            CTM_temp["Tset"]=Tset;
-            Ov=overlap_CTM(CTM_temp,AA_fused);
-
             if CTM_ite_info
-                println("CTMRG iteration: "*string(ci)*", CTMRG err: "*string(er)*",  overlap= "*string(Ov));flush(stdout);
+                println("CTMRG iteration: "*string(ci)*", CTMRG err: "*string(er));flush(stdout);
             end
-            
-            if (er<tol)&(forced_steps==nothing)
+            if er<tol
                 break;
             end
             ss_old1=ss_new1;
@@ -681,9 +356,11 @@ function CTMRG(AA_fused,chi,conv_check,tol,CTM,CTM_ite_nums, CTM_trun_tol,forced
 
     CTM["Cset"]=Cset;
     CTM["Tset"]=Tset;
-
-    return CTM
-
+    if CTM_conv_info
+        return CTM, AA_fused, U_L,U_D,U_R,U_U,ite_num,ite_err
+    else
+        return CTM, AA_fused, U_L,U_D,U_R,U_U
+    end
 
 end
 
@@ -782,15 +459,84 @@ function CTM_ite(Cset, Tset, AA_fused, chi, direction, trun_tol,CTM_ite_info)
     # println(norm(M1tem))
     # println(norm(M7tem))
 
+    println([norm(M1tem),norm(M5tem),norm(M7tem)]);
+
+
     Cset[mod1(direction,4)]=M1tem/norm(M1tem);
     Tset[mod1(direction-1,4)]=M5tem/norm(M5tem);
     Cset[mod1(direction-1,4)]=M7tem/norm(M7tem);
     return Cset,Tset
 end
 
+# function init_CTM(chi,A,type,CTM_ite_info)
+#     if CTM_ite_info
+#         display("initialize CTM")
+#     end
+#     #numind(A)
+#     #numin(A)
+#     #numout(A)
+#     CTM=[];
+#     Cset=Vector(undef,4);
+#     Tset=Vector(undef,4);
+#     #space(A,1)
+#     if type=="PBC"
+#         for direction=1:4
+#             inds=(mod1(2-direction,4),mod1(3-direction,4),mod1(4-direction,4),mod1(1-direction,4),5);
+#             A_rotate=permute(A,inds);
+#             Ap_rotate=A_rotate';
 
+#             @tensor M[:]:=Ap_rotate[1,-1,-3,2,3]*A_rotate[1,-2,-4,2,3];
+#             Cset[direction]=M;
+#             @tensor M[:]:=Ap_rotate[-1,-3,-5,1,2]*A_rotate[-2,-4,-6,1,2];
+#             Tset[direction]=M;
+#         end
 
-function init_CTM(chi,Aa,Ab,type,CTM_ite_info,swap_gate_double_layer)
+#         #fuse legs
+#         ul_set=Vector(undef,4);
+#         ur_set=Vector(undef,4);
+#         for direction=1:2
+#             ul_set[direction]=unitary(fuse(space(Cset[direction], 3) ⊗ space(Cset[direction], 4)), space(Cset[direction], 3) ⊗ space(Cset[direction], 4));
+#             ur_set[direction]=unitary(fuse(space(Tset[direction], 5) ⊗ space(Tset[direction], 6)), space(Tset[direction], 5) ⊗ space(Tset[direction], 6));
+#         end
+#         for direction=3:4
+#             ul_set[direction]=unitary(fuse(space(Cset[direction], 3) ⊗ space(Cset[direction], 4))', space(Cset[direction], 3) ⊗ space(Cset[direction], 4));
+#             ur_set[direction]=unitary(fuse(space(Tset[direction], 5) ⊗ space(Tset[direction], 6))', space(Tset[direction], 5) ⊗ space(Tset[direction], 6));
+#         end
+#         for direction=1:4
+#             C=Cset[direction];
+#             ul=ur_set[mod1(direction-1,4)];
+#             ur=ul_set[direction];
+#             ulp=permute(ul',(3,),(1,2,));
+#             urp=permute(ur',(3,),(1,2,));
+#             #@tensor Cnew[(-1);(-2)]:=ulp[-1,1,2]*C[1,2,3,4]*ur[-2,3,4]
+#             @tensor Cnew[:]:=ulp[-1,1,2]*C[1,2,3,4]*ur[-2,3,4];#put all indices in tone side so that its adjoint has the same index order
+#             Cset[direction]=Cnew;
+
+#             T=Tset[direction];
+#             ul=ul_set[direction];
+#             ur=ur_set[direction];
+#             ulp=permute(ul',(3,),(1,2,));
+#             urp=permute(ur',(3,),(1,2,));
+#             #@tensor Tnew[(-1);(-2,-3,-4)]:=ulp[-1,1,2]*T[1,2,-2,-3,3,4]*ur[-4,3,4]
+#             @tensor Tnew[:]:=ulp[-1,1,2]*T[1,2,-2,-3,3,4]*ur[-4,3,4];#put all indices in tone side so that its adjoint has the same index order
+#             Tset[direction]=Tnew;
+#         end
+#     elseif type=="random"
+#     end
+#     CTM=Dict([("Cset", Cset), ("Tset", Tset)]);
+
+#     if Guztwiller
+#         AA_fused, U_L,U_D,U_R,U_U=build_double_layer_NoSwap(deepcopy(A'),deepcopy(A));
+#     else
+#         AA_fused, U_L,U_D,U_R,U_U=build_double_layer_swap(deepcopy(A'),deepcopy(A));
+#     end
+#     CTM=fuse_CTM_legs(CTM,U_L,U_D,U_R,U_U);
+
+#     return CTM, AA_fused, U_L,U_D,U_R,U_U
+
+# end
+
+function init_CTM(chi,A,type,CTM_ite_info,swap_gate_double_layer)
     if CTM_ite_info
         display("initialize CTM")
     end
@@ -802,19 +548,19 @@ function init_CTM(chi,Aa,Ab,type,CTM_ite_info,swap_gate_double_layer)
     Cset=Vector(undef,4);
     Tset=Vector(undef,4);
 
-    if (Gutzwiller) & (~swap_gate_double_layer)
-        AA_fused, U_L,U_D,U_R,U_U=build_double_layer_NoSwap(deepcopy(Aa'),deepcopy(Ab));
+    if (Guztwiller) & (~swap_gate_double_layer)
+        AA_fused, U_L,U_D,U_R,U_U=build_double_layer_NoSwap(deepcopy(A'),deepcopy(A));
+        
     
         if type=="PBC"
             for direction=1:4
                 inds=(mod1(2-direction,4),mod1(3-direction,4),mod1(4-direction,4),mod1(1-direction,4),5);
-                Ab_rotate=permute(Ab,inds);
-                Aa_rotate=permute(Aa,inds);
-                Aap_rotate=Aa_rotate';
+                A_rotate=permute(A,inds);
+                Ap_rotate=A_rotate';
 
-                @tensor M[:]:=Aap_rotate[1,-1,-3,2,3]*Ab_rotate[1,-2,-4,2,3];
+                @tensor M[:]:=Ap_rotate[1,-1,-3,2,3]*A_rotate[1,-2,-4,2,3];
                 Cset[direction]=M;
-                @tensor M[:]:=Aap_rotate[-1,-3,-5,1,2]*Ab_rotate[-2,-4,-6,1,2];
+                @tensor M[:]:=Ap_rotate[-1,-3,-5,1,2]*A_rotate[-2,-4,-6,1,2];
                 Tset[direction]=M;
             end
 
@@ -853,7 +599,10 @@ function init_CTM(chi,Aa,Ab,type,CTM_ite_info,swap_gate_double_layer)
         CTM=Dict([("Cset", Cset), ("Tset", Tset)]);
         CTM=fuse_CTM_legs(CTM,U_L,U_D,U_R,U_U);
     else
-        AA_fused, U_L,U_D,U_R,U_U=build_double_layer_swap(deepcopy(Aa'),deepcopy(Ab));
+
+        AA_fused, U_L,U_D,U_R,U_U=build_double_layer_swap(deepcopy(A'),deepcopy(A));
+        
+        
 
         if type=="PBC"
             @tensor C1[:]:=AA_fused[1,-1,-2,3]*U_R[2,2,1]*U_D[3,4,4];
@@ -956,45 +705,39 @@ function truncate_multiplet(s,multiplet_tol)
 end
 
 
+# function truncate_multiplet(s,chi,multiplet_tol,trun_tol)
+#     #the multiplet is not due to su(2) symmetry
+#     s_dense=sort(to_array(s),rev=true);
 
+#     println(s_dense/s_dense[1])
 
+#     if length(s_dense)>chi
+#         value_trun=s_dense[chi+1];
+#     else
+#         value_trun=0;
+#     end
+#     value_max=maximum(s_dense);
 
+#     s_Dict=convert(Dict,s);
+    
+#     space_full=space(s,1);
+#     for sp in sectors(space_full)
 
-function correl_TransOp(vl,Tup,Tdown,AAfused)
-    if AAfused==[]
-        
-        @tensor vl[:]:=vl[-1,1,3]*Tup[1,2,-2]*Tdown[-3,2,3];
-        
-    else
-        
-        @tensor vl[:]:=vl[-1,1,3,5]*Tup[1,2,-2]*AAfused[3,4,-3,2]*Tdown[-4,4,5];
-        
-    end
-    return vl
-end
-function solve_correl_length(Tup,Tdown,AA_fused)
+#         diag_elem=diag(s_Dict[:data][string(sp)]);
+#         for cd=1:length(diag_elem)
+#             if ((diag_elem[cd]/value_max)<trun_tol) | (diag_elem[cd]<=value_trun) |(abs((diag_elem[cd]-value_trun)/value_trun)<multiplet_tol)
+#                 diag_elem[cd]=0;
+#             end
+#         end
+#         s_Dict[:data][string(sp)]=diagm(diag_elem);
+#     end
+#     s=convert(TensorMap,s_Dict);
 
-
-
-        correl_TransOp_fx(x)=correl_TransOp(x,Tup,Tdown,AA_fused)
-
-        Vl=GradedSpace[Irrep[U₁]⊠Irrep[SU₂]]((0,0)=>1);
-        vl_init = permute(TensorMap(randn, Vl⊗space(Tup,1)'⊗space(AA_fused,1)', space(Tdown,3)), (1,2,3,4,),());# assume that the dominant eigenvector has total spin zero. If not, it will have three indeces and it's not Hermiitan.
-        eu1,ev1=eigsolve(correl_TransOp_fx, vl_init, 1,:LM,Arnoldi());
-
-
-
-        correl_TransOp_fx0(x)=correl_TransOp(x,Tup,Tdown,[])
-
-        Vl=GradedSpace[Irrep[U₁]⊠Irrep[SU₂]]((0,0)=>1);
-        vl_init = permute(TensorMap(randn, Vl⊗space(Tup,1)', space(Tdown,3)), (1,2,3,),());# assume that the dominant eigenvector has total spin zero. If not, it will have three indeces and it's not Hermiitan.
-        eu2,ev2=eigsolve(correl_TransOp_fx0, vl_init, 1,:LM,Arnoldi());
-
-        
-        return eu1[1],eu2[1]
-
-  
-end
-
+#     s_=sort(diag(convert(Array,s)),rev=true);
+#     s_=s_/s_[1];
+#     print(s_)
+#     # @assert 1+1==3
+#     return s
+# end
 
 

@@ -1,28 +1,31 @@
 using LinearAlgebra
 using TensorKit
+using KrylovKit
 using JSON
 using HDF5, JLD2, MAT
-cd("D:\\My Documents\\Code\\Julia_codes\\Tensor network\\GfPEPS_parton\\parton_ctmrg\\swap_gate_ctmrg\\M2")
+cd(@__DIR__)
 
-include("parton_CTMRG.jl")
-include("D:\\My Documents\\Code\\Julia_codes\\Tensor network\\GfPEPS_parton\\parton_ctmrg\\swap_gate_ctmrg\\correl_funs.jl")
+
 include("swap_funs.jl")
-include("D:\\My Documents\\Code\\Julia_codes\\Tensor network\\GfPEPS_parton\\parton_ctmrg\\mpo_mps_funs.jl")
+include("fermi_permute.jl")
+include("double_layer_funs.jl")
+include("Projector_funs.jl")
+include("CTMRG_funs.jl")
+include("ES_algorithms.jl")
 
-swap_gate_double_layer=true;
-M=2;#number of virtual mode
-distance=40;
-chi=20
+
+chi=110
 tol=1e-6
-Guztwiller=true;#add projector
-
-
-
 CTM_ite_nums=500;
 CTM_trun_tol=1e-10;
 
 
-data=load("swap_gate_Tensor_M"*string(M)*".jld2")
+M=2;
+Guztwiller=true;#add projector
+
+
+
+data=load("swap_gate_Tensor_M"*string(M)*"_PBC.jld2")
 
 P_G=data["P_G"];
 
@@ -116,77 +119,38 @@ A=permute(A,(1,3,2,4,5,));#L,U,P,R,D
 #convention of fermionic PEPS: |L,U,P><D,R|====L,U,P|><|R,D
 
 
-#convert to the order of PEPS code
-A=permute(A,(1,5,4,2,3,));
+A_origin=deepcopy(A);
 
 
 
 
+y_anti_pbc=false;
+boundary_phase_y=0.5;
 
-
-
-
-
-A_fused=A;
-
-
-conv_check="singular_value";
-CTM, AA_fused, U_L,U_D,U_R,U_U=init_CTM(chi,A_fused,"PBC",true,swap_gate_double_layer);
-
-@time CTM, AA_fused, U_L,U_D,U_R,U_U=CTMRG(AA_fused,chi,conv_check,tol,CTM,CTM_ite_nums,CTM_trun_tol);
-
-
-
-display(space(CTM["Cset"][1]))
-display(space(CTM["Cset"][2]))
-display(space(CTM["Cset"][3]))
-display(space(CTM["Cset"][4]))
-
-
-
-println("construct physical operators");flush(stdout);
-#spin-spin operator act on a single site
-um,sm,vm=tsvd(permute(SS_op,(1,3,),(2,4,)));
-vm=sm*vm;vm=permute(vm,(2,3,),(1,));
-
-@tensor SS_cell[:]:=SS_op[1,2,4,5]*U_phy1[-1,3,1,2]*U_phy1'[3,4,5,-2];#spin-spin operator inside a unitcell
-@tensor SA_left[:]:=um[1,4,-3]*U_phy1[-1,3,1,2]*U_phy1'[3,4,2,-2];
-@tensor SB_left[:]:=um[2,5,-3]*U_phy1[-1,3,1,2]*U_phy1'[3,1,5,-2];
-@tensor SA_right[:]:=vm[1,4,-3]*U_phy1[-1,3,1,2]*U_phy1'[3,4,2,-2];
-@tensor SB_right[:]:=vm[2,5,-3]*U_phy1[-1,3,1,2]*U_phy1'[3,1,5,-2];
-
-if Guztwiller
-    if swap_gate_double_layer
-        AA_SS=build_double_layer_swap_op(A_fused,SS_cell,false);
-        AA_SAL=build_double_layer_swap_op(A_fused,SA_left,true);
-        AA_SBL=build_double_layer_swap_op(A_fused,SB_left,true);
-        AA_SAR=build_double_layer_swap_op(A_fused,SA_right,true);
-        AA_SBR=build_double_layer_swap_op(A_fused,SB_right,true);
-    else 
-        AA_SS=build_double_layer_NoSwap_op(A_fused,SS_cell,false);
-        AA_SAL=build_double_layer_NoSwap_op(A_fused,SA_left,true);
-        AA_SBL=build_double_layer_NoSwap_op(A_fused,SB_left,true);
-        AA_SAR=build_double_layer_NoSwap_op(A_fused,SA_right,true);
-        AA_SBR=build_double_layer_NoSwap_op(A_fused,SB_right,true);
-    end
-else
-    AA_SS=build_double_layer_swap_op(A_fused,SS_cell,false);
-    AA_SAL=build_double_layer_swap_op(A_fused,SA_left,true);
-    AA_SBL=build_double_layer_swap_op(A_fused,SB_left,true);
-    AA_SAR=build_double_layer_swap_op(A_fused,SA_right,true);
-    AA_SBR=build_double_layer_swap_op(A_fused,SB_right,true);
+if y_anti_pbc
+    gauge_gate1=gauge_gate(A,2,2*pi/6*boundary_phase_y);
+    @tensor A[:]:=A[-1,1,-3,-4,-5]*gauge_gate1[-2,1];
 end
 
-println("construct double layer tensor with operator");flush(stdout);
-AA_SS=build_double_layer_swap_op(A_fused,SS_cell,false);
-AA_SAL=build_double_layer_swap_op(A_fused,SA_left,true);
-AA_SBL=build_double_layer_swap_op(A_fused,SB_left,true);
-AA_SAR=build_double_layer_swap_op(A_fused,SA_right,true);
-AA_SBR=build_double_layer_swap_op(A_fused,SB_right,true);
+#############################
+# #convert to the order of PEPS code
+A=permute(A,(1,5,4,2,3,));
 
-@show varinfo()
+#############################
+println("chi="*string(chi))
 
-println("Calculate correlations:");flush(stdout);
-cal_correl(M, AA_fused,AA_SS,AA_SAL,AA_SBL,AA_SAR,AA_SBR, chi,CTM, distance)
+conv_check="singular_value";
+CTM, AA_fused, U_L,U_D,U_R,U_U=init_CTM(chi,A,"PBC",true);
+@time CTM, AA_fused, U_L,U_D,U_R,U_U=CTMRG(AA_fused,chi,conv_check,tol,CTM,CTM_ite_nums,CTM_trun_tol);
+
+N=6;
+EH_n=50;
+if chi>150
+    decomp=true;
+else
+    decomp=false;
+end
+ES_CTMRG_ED_Qn_S(CTM,U_L,U_D,U_R,U_U,M,chi,N,EH_n,-11,0.5,decomp,y_anti_pbc)
+
 
 

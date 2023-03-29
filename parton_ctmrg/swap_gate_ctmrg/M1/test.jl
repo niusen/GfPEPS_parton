@@ -4,7 +4,7 @@ using JSON
 using HDF5, JLD2, MAT
 cd("D:\\My Documents\\Code\\Julia_codes\\Tensor network\\GfPEPS_parton\\parton_ctmrg\\swap_gate_ctmrg\\M1")
 
-include("parton_CTMRG.jl")
+include("parton_CTMRG_show_norm.jl")
 include("D:\\My Documents\\Code\\Julia_codes\\Tensor network\\GfPEPS_parton\\parton_ctmrg\\swap_gate_ctmrg\\correl_funs.jl")
 include("swap_funs.jl")
 include("D:\\My Documents\\Code\\Julia_codes\\Tensor network\\GfPEPS_parton\\parton_ctmrg\\mpo_mps_funs.jl")
@@ -15,7 +15,7 @@ swap_gate_double_layer=true;
 
 M=1;#number of virtual mode
 distance=40;
-chi=40
+chi=80
 tol=1e-6
 Guztwiller=true;#add projector
 
@@ -101,10 +101,6 @@ A=permute(A,(1,5,4,2,3,));
 
 
 
-
-
-
-
 A_fused=A;
 
 
@@ -116,62 +112,4 @@ display(space(CTM["Cset"][1]))
 display(space(CTM["Cset"][2]))
 display(space(CTM["Cset"][3]))
 display(space(CTM["Cset"][4]))
-
-
-println("construct physical operators");flush(stdout);
-#spin-spin operator act on a single site
-um,sm,vm=tsvd(permute(SS_op,(1,3,),(2,4,)));
-vm=sm*vm;vm=permute(vm,(2,3,),(1,));
-
-@tensor SS_cell[:]:=SS_op[1,2,4,5]*U_phy1[-1,3,1,2]*U_phy1'[3,4,5,-2];#spin-spin operator inside a unitcell
-@tensor SA_left[:]:=um[1,4,-3]*U_phy1[-1,3,1,2]*U_phy1'[3,4,2,-2];
-@tensor SB_left[:]:=um[2,5,-3]*U_phy1[-1,3,1,2]*U_phy1'[3,1,5,-2];
-@tensor SA_right[:]:=vm[1,4,-3]*U_phy1[-1,3,1,2]*U_phy1'[3,4,2,-2];
-@tensor SB_right[:]:=vm[2,5,-3]*U_phy1[-1,3,1,2]*U_phy1'[3,1,5,-2];
-
-if M==1        
-    @tensor SS_cell[:]:=SS_cell[3,4]*U_phy2[-1,3,1,2]*U_phy2'[4,1,2,-2];
-    @tensor SA_left[:]:=SA_left[3,4,-3]*U_phy2[-1,3,1,2]*U_phy2'[4,1,2,-2];
-    @tensor SB_left[:]:=SB_left[3,4,-3]*U_phy2[-1,3,1,2]*U_phy2'[4,1,2,-2];
-    @tensor SA_right[:]:=SA_right[3,4,-3]*U_phy2[-1,3,1,2]*U_phy2'[4,1,2,-2];
-    @tensor SB_right[:]:=SB_right[3,4,-3]*U_phy2[-1,3,1,2]*U_phy2'[4,1,2,-2];
-elseif M==2
-    @tensor SS_cell[:]:=SS_cell[3,4]*U_phy2[-1,3,1,2,5,6]*U_phy2'[4,1,2,5,6,-2];
-    @tensor SA_left[:]:=SA_left[3,4,-3]*U_phy2[-1,3,1,2,5,6]*U_phy2'[4,1,2,5,6,-2];
-    @tensor SB_left[:]:=SB_left[3,4,-3]*U_phy2[-1,3,1,2,5,6]*U_phy2'[4,1,2,5,6,-2];
-    @tensor SA_right[:]:=SA_right[3,4,-3]*U_phy2[-1,3,1,2,5,6]*U_phy2'[4,1,2,5,6,-2];
-    @tensor SB_right[:]:=SB_right[3,4,-3]*U_phy2[-1,3,1,2,5,6]*U_phy2'[4,1,2,5,6,-2];
-end
-
-println("construct double layer tensor with operator");flush(stdout);
-if Guztwiller
-    if swap_gate_double_layer
-        AA_SS=build_double_layer_swap_op(A_fused,SS_cell,false);
-        AA_SAL=build_double_layer_swap_op(A_fused,SA_left,true);
-        AA_SBL=build_double_layer_swap_op(A_fused,SB_left,true);
-        AA_SAR=build_double_layer_swap_op(A_fused,SA_right,true);
-        AA_SBR=build_double_layer_swap_op(A_fused,SB_right,true);
-    else 
-        AA_SS=build_double_layer_NoSwap_op(A_fused,SS_cell,false);
-        AA_SAL=build_double_layer_NoSwap_op(A_fused,SA_left,true);
-        AA_SBL=build_double_layer_NoSwap_op(A_fused,SB_left,true);
-        AA_SAR=build_double_layer_NoSwap_op(A_fused,SA_right,true);
-        AA_SBR=build_double_layer_NoSwap_op(A_fused,SB_right,true);
-    end
-else
-    AA_SS=build_double_layer_swap_op(A_fused,SS_cell,false);
-    AA_SAL=build_double_layer_swap_op(A_fused,SA_left,true);
-    AA_SBL=build_double_layer_swap_op(A_fused,SB_left,true);
-    AA_SAR=build_double_layer_swap_op(A_fused,SA_right,true);
-    AA_SBR=build_double_layer_swap_op(A_fused,SB_right,true);
-end
-
-
-println("Calculate correlations:");flush(stdout);
-cal_correl(M, AA_fused,AA_SS,AA_SAL,AA_SBL,AA_SAR,AA_SBR, chi,CTM, distance)
-
-
-
-
-
 

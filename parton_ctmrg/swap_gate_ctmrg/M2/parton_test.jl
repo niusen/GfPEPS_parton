@@ -11,10 +11,10 @@ include("D:\\My Documents\\Code\\Julia_codes\\Tensor network\\GfPEPS_parton\\par
 
 swap_gate_double_layer=true;
 M=2;#number of virtual mode
-distance=40;
+distance=10;
 chi=20
 tol=1e-6
-Guztwiller=true;#add projector
+Guztwiller=false;#add projector
 
 
 
@@ -131,62 +131,59 @@ A_fused=A;
 
 
 conv_check="singular_value";
-CTM, AA_fused, U_L,U_D,U_R,U_U=init_CTM(chi,A_fused,"PBC",true,swap_gate_double_layer);
-
-@time CTM, AA_fused, U_L,U_D,U_R,U_U=CTMRG(AA_fused,chi,conv_check,tol,CTM,CTM_ite_nums,CTM_trun_tol);
+CTM, AA, U_L,U_D,U_R,U_U=init_CTM(chi,A_fused,"PBC",true,swap_gate_double_layer);
 
 
+Cset=CTM["Cset"];
+Tset=CTM["Tset"];
 
-display(space(CTM["Cset"][1]))
-display(space(CTM["Cset"][2]))
-display(space(CTM["Cset"][3]))
-display(space(CTM["Cset"][4]))
+#3x3 term
+@tensor envL[:]:=Cset[1][1,-1]*Tset[4][2,-2,1]*Cset[4][-3,2];
+@tensor envR[:]:=Cset[2][-1,1]*Tset[2][1,-2,2]*Cset[3][2,-3];
+@tensor envL[:]:=envL[1,2,4]*Tset[1][1,3,-1]*AA[2,5,-2,3]*Tset[3][-3,5,4];
+@tensor Norm[:]:=envL[1,2,3]*envR[1,2,3];
+ov_3x3=blocks(Norm)[(Irrep[U₁](0) ⊠ Irrep[SU₂](0))][1];
+println("ov_3x3: "*string(ov_3x3));flush(stdout);
 
+#2x3 term
+@tensor Norm[:]:=Cset[1][2,1]*Cset[2][5,7]*Cset[3][7,6]*Cset[4][3,2]*Tset[1][1,4,5]*Tset[3][6,4,3];
+ov_2x3=blocks(Norm)[(Irrep[U₁](0) ⊠ Irrep[SU₂](0))][1];
+println("ov_2x3: "*string(ov_2x3));flush(stdout);
 
+#3x2 term
+@tensor Norm[:]:=Cset[1][1,2]*Cset[2][2,3]*Cset[3][6,7]*Cset[4][7,5]*Tset[2][3,4,6]*Tset[4][5,4,1];
+ov_3x2=blocks(Norm)[(Irrep[U₁](0) ⊠ Irrep[SU₂](0))][1];
+println("ov_3x2: "*string(ov_3x2));flush(stdout);
 
-println("construct physical operators");flush(stdout);
-#spin-spin operator act on a single site
-um,sm,vm=tsvd(permute(SS_op,(1,3,),(2,4,)));
-vm=sm*vm;vm=permute(vm,(2,3,),(1,));
+#2x2 term
+@tensor Norm[:]:=Cset[1][1,2]*Cset[2][2,3]*Cset[3][3,4]*Cset[4][4,1];
+ov_2x2=blocks(Norm)[(Irrep[U₁](0) ⊠ Irrep[SU₂](0))][1];
+println("ov_2x2: "*string(ov_2x2));flush(stdout);
 
-@tensor SS_cell[:]:=SS_op[1,2,4,5]*U_phy1[-1,3,1,2]*U_phy1'[3,4,5,-2];#spin-spin operator inside a unitcell
-@tensor SA_left[:]:=um[1,4,-3]*U_phy1[-1,3,1,2]*U_phy1'[3,4,2,-2];
-@tensor SB_left[:]:=um[2,5,-3]*U_phy1[-1,3,1,2]*U_phy1'[3,1,5,-2];
-@tensor SA_right[:]:=vm[1,4,-3]*U_phy1[-1,3,1,2]*U_phy1'[3,4,2,-2];
-@tensor SB_right[:]:=vm[2,5,-3]*U_phy1[-1,3,1,2]*U_phy1'[3,1,5,-2];
-
-if Guztwiller
-    if swap_gate_double_layer
-        AA_SS=build_double_layer_swap_op(A_fused,SS_cell,false);
-        AA_SAL=build_double_layer_swap_op(A_fused,SA_left,true);
-        AA_SBL=build_double_layer_swap_op(A_fused,SB_left,true);
-        AA_SAR=build_double_layer_swap_op(A_fused,SA_right,true);
-        AA_SBR=build_double_layer_swap_op(A_fused,SB_right,true);
-    else 
-        AA_SS=build_double_layer_NoSwap_op(A_fused,SS_cell,false);
-        AA_SAL=build_double_layer_NoSwap_op(A_fused,SA_left,true);
-        AA_SBL=build_double_layer_NoSwap_op(A_fused,SB_left,true);
-        AA_SAR=build_double_layer_NoSwap_op(A_fused,SA_right,true);
-        AA_SBR=build_double_layer_NoSwap_op(A_fused,SB_right,true);
-    end
-else
-    AA_SS=build_double_layer_swap_op(A_fused,SS_cell,false);
-    AA_SAL=build_double_layer_swap_op(A_fused,SA_left,true);
-    AA_SBL=build_double_layer_swap_op(A_fused,SB_left,true);
-    AA_SAR=build_double_layer_swap_op(A_fused,SA_right,true);
-    AA_SBR=build_double_layer_swap_op(A_fused,SB_right,true);
-end
-
-println("construct double layer tensor with operator");flush(stdout);
-AA_SS=build_double_layer_swap_op(A_fused,SS_cell,false);
-AA_SAL=build_double_layer_swap_op(A_fused,SA_left,true);
-AA_SBL=build_double_layer_swap_op(A_fused,SB_left,true);
-AA_SAR=build_double_layer_swap_op(A_fused,SA_right,true);
-AA_SBR=build_double_layer_swap_op(A_fused,SB_right,true);
-
-@show varinfo()
-
-println("Calculate correlations:");flush(stdout);
-cal_correl(M, AA_fused,AA_SS,AA_SAL,AA_SBL,AA_SAR,AA_SBR, chi,CTM, distance)
+########################################
+CTM_ite_nums=1;
+@time CTM, AA, U_L,U_D,U_R,U_U=CTMRG(AA,chi,conv_check,tol,CTM,CTM_ite_nums,CTM_trun_tol);
 
 
+#3x3 term
+@tensor envL[:]:=Cset[1][1,-1]*Tset[4][2,-2,1]*Cset[4][-3,2];
+@tensor envR[:]:=Cset[2][-1,1]*Tset[2][1,-2,2]*Cset[3][2,-3];
+@tensor envL[:]:=envL[1,2,4]*Tset[1][1,3,-1]*AA[2,5,-2,3]*Tset[3][-3,5,4];
+@tensor Norm[:]:=envL[1,2,3]*envR[1,2,3];
+ov_3x3=blocks(Norm)[(Irrep[U₁](0) ⊠ Irrep[SU₂](0))][1];
+println("ov_3x3: "*string(ov_3x3));flush(stdout);
+
+#2x3 term
+@tensor Norm[:]:=Cset[1][2,1]*Cset[2][5,7]*Cset[3][7,6]*Cset[4][3,2]*Tset[1][1,4,5]*Tset[3][6,4,3];
+ov_2x3=blocks(Norm)[(Irrep[U₁](0) ⊠ Irrep[SU₂](0))][1];
+println("ov_2x3: "*string(ov_2x3));flush(stdout);
+
+#3x2 term
+@tensor Norm[:]:=Cset[1][1,2]*Cset[2][2,3]*Cset[3][6,7]*Cset[4][7,5]*Tset[2][3,4,6]*Tset[4][5,4,1];
+ov_3x2=blocks(Norm)[(Irrep[U₁](0) ⊠ Irrep[SU₂](0))][1];
+println("ov_3x2: "*string(ov_3x2));flush(stdout);
+
+#2x2 term
+@tensor Norm[:]:=Cset[1][1,2]*Cset[2][2,3]*Cset[3][3,4]*Cset[4][4,1];
+ov_2x2=blocks(Norm)[(Irrep[U₁](0) ⊠ Irrep[SU₂](0))][1];
+println("ov_2x2: "*string(ov_2x2));flush(stdout);
