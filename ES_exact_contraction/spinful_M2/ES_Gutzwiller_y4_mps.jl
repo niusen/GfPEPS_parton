@@ -353,10 +353,14 @@ Qn=vcat(Qn_set1,Qn_set2);
 Spin=vcat(Spin_set1,Spin_set2);
 
 matwrite("ES_Gutzwiller_M2_Nv4_MPS"*".mat", Dict(
-    "k_phase" => k_phase,
-    "eu" => eu,
-    "Qn"=>Qn,
-    "Spin"=>Spin
+    "k_phase_set1" => k_phase_set1,
+    "eu_set1" => eu_set1,
+    "Qn_set1"=>Qn_set1,
+    "Spin_set1"=>Spin_set1,
+    "k_phase_set2" => k_phase_set2,
+    "eu_set2" => eu_set2,
+    "Qn_set2"=>Qn_set2,
+    "Spin_set2"=>Spin_set2
 ); compress = false)
 
 
