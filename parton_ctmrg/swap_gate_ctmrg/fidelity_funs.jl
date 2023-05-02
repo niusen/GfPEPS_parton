@@ -1,7 +1,8 @@
 using LinearAlgebra
 using TensorKit
+using KrylovKit
 
-function cal_fidelity_MPS(theta1,theta2,Gutzwiller,M,chi,tol,CTM_ite_nums,CTM_trun_tol,forced_steps,swap_gate_double_layer)
+function cal_fidelity_MPS(theta1,theta2,Gutzwiller,M,chi,tol,CTM_ite_nums,CTM_trun_tol,forced_steps,swap_gate_double_layer,CTM12_init,CTM11_init,CTM22_init)
     println("chi= "*string(chi));
 
     filenm1="/users/p1231/niu/Code/Julia_codes/Tensor_network/GfPEPS_parton/test_M2_projected_decoupled_rotated/theta_"*string(theta1)*"/swap_gate_Tensor_M2.jld2";
@@ -11,20 +12,34 @@ function cal_fidelity_MPS(theta1,theta2,Gutzwiller,M,chi,tol,CTM_ite_nums,CTM_tr
     A1=load_state(filenm1,M,Gutzwiller);
     A2=load_state(filenm2,M,Gutzwiller);
 
-    #overlap between A1 and A2
     conv_check="singular_value";
-    CTM, A1A2, U_L,U_D,U_R,U_U=init_CTM(chi,A1,A2,"PBC",true,swap_gate_double_layer);
-    @time CTM12=CTMRG(A1A2,chi,conv_check,tol,CTM,CTM_ite_nums,CTM_trun_tol,forced_steps);
+
+    #overlap between A1 and A2
+    if CTM12_init==[]
+        CTM_init, A1A2, U_L,U_D,U_R,U_U=init_CTM(chi,A1,A2,"PBC",true,swap_gate_double_layer);
+    else
+        _, A1A2, U_L,U_D,U_R,U_U=init_CTM(chi,A1,A2,"PBC",true,swap_gate_double_layer);
+        CTM_init=deepcopy(CTM12_init);
+    end
+    @time CTM12=CTMRG(A1A2,chi,conv_check,tol,CTM_init,CTM_ite_nums,CTM_trun_tol,forced_steps);
 
     #overlap between A1 and A1
-    conv_check="singular_value";
-    CTM, A1A1, U_L,U_D,U_R,U_U=init_CTM(chi,A1,A1,"PBC",true,swap_gate_double_layer);
-    @time CTM11=CTMRG(A1A1,chi,conv_check,tol,CTM,CTM_ite_nums,CTM_trun_tol,forced_steps);
+    if CTM11_init==[]
+        CTM_init, A1A1, U_L,U_D,U_R,U_U=init_CTM(chi,A1,A1,"PBC",true,swap_gate_double_layer);
+    else
+        _, A1A1, U_L,U_D,U_R,U_U=init_CTM(chi,A1,A1,"PBC",true,swap_gate_double_layer);
+        CTM_init=deepcopy(CTM11_init);
+    end
+    @time CTM11=CTMRG(A1A1,chi,conv_check,tol,CTM_init,CTM_ite_nums,CTM_trun_tol,forced_steps);
 
     #overlap between A2 and A2
-    conv_check="singular_value";
-    CTM, A2A2, U_L,U_D,U_R,U_U=init_CTM(chi,A2,A2,"PBC",true,swap_gate_double_layer);
-    @time CTM22=CTMRG(A2A2,chi,conv_check,tol,CTM,CTM_ite_nums,CTM_trun_tol,forced_steps);
+    if CTM22_init==[]
+        CTM_init, A2A2, U_L,U_D,U_R,U_U=init_CTM(chi,A2,A2,"PBC",true,swap_gate_double_layer);
+    else
+        _, A2A2, U_L,U_D,U_R,U_U=init_CTM(chi,A2,A2,"PBC",true,swap_gate_double_layer);
+        CTM_init=deepcopy(CTM22_init);
+    end
+    @time CTM22=CTMRG(A2A2,chi,conv_check,tol,CTM_init,CTM_ite_nums,CTM_trun_tol,forced_steps);
 
 
     ova_12,ovb_12=overlap_CTM_MPS(CTM12,A1A2);
@@ -48,6 +63,8 @@ function cal_fidelity_MPS(theta1,theta2,Gutzwiller,M,chi,tol,CTM_ite_nums,CTM_tr
         "ovb_12" => ovb_12,
         "ovb_total" => ovb_total,
     ); compress = false)
+
+    return CTM12,CTM11,CTM22
 end
 
 
@@ -649,10 +666,15 @@ function CTMRG(AA_fused,chi,conv_check,tol,CTM,CTM_ite_nums, CTM_trun_tol,forced
             Ov=overlap_CTM(CTM_temp,AA_fused);
 
             if CTM_ite_info
-                println("CTMRG iteration: "*string(ci)*", CTMRG err: "*string(er)*",  overlap= "*string(Ov));flush(stdout);
+                if mod(ci,5)==1
+                    println("CTMRG iteration: "*string(ci)*", CTMRG err: "*string(er)*",  overlap= "*string(Ov));flush(stdout);
+                else
+                    println("CTMRG iteration: "*string(ci)*", CTMRG err: "*string(er));flush(stdout);
+                end
             end
             
             if (er<tol)&(forced_steps==nothing)
+                println("CTMRG iteration: "*string(ci)*", CTMRG err: "*string(er)*",  overlap= "*string(Ov));flush(stdout);
                 break;
             end
             ss_old1=ss_new1;
