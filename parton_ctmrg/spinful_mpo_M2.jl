@@ -17,13 +17,13 @@ M=2;#number of virtual modes per bond
 Q=2*M+filling;#total number of physical and virtual fermions on a site; 
 #size of W matrix: (P+4M, Q)
 #init_state="Hofstadter_N2_M"*string(M)*".jld";#initialize: nothing
-#init_state="QWZ_M"*string(M)*".jld";#initialize: nothing
+init_state="QWZ_M"*string(M)*".jld";#initialize: nothing
 #init_state="C2_model1_correct_M"*string(M)*".jld";#initialize: nothing
 #init_state="C2_model1_correct_decoupled_M"*string(M)*".jld";#initialize: nothing
 #init_state="C2_model1_incorrect_M"*string(M)*".jld";#initialize: nothing
 #init_state="C2_model1_correct_modified_M"*string(M)*".jld";#initialize: nothing
 #init_state="Rotate_decoupled_C2_theta_0.25_M"*string(M)*".jld";#initialize: nothing
-init_state="Rotate_decoupled_modified_C2_theta_0.125_M"*string(M)*".jld";#initialize: nothing
+#init_state="Rotate_decoupled_modified_C2_theta_0.125_M"*string(M)*".jld";#initialize: nothing
 #init_state="C2_model1_correct_decoupled_modified_M"*string(M)*".jld";#initialize: nothing 
 
 W=load(init_state)["W"];

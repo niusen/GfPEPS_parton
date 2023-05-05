@@ -285,6 +285,60 @@ function evaluate_correl_spinspin(direction, AA_fused, AA_op1, AA_op2, CTM, meth
 end
 
 
+function evaluate_correl_spinspin_FP_edge(direction, AA_fused, AA_op1, AA_op2, CTM, method, distance)
+    #use fixed point in the edge
+    correl_funs=Vector(undef,distance);
+
+    C1=CTM["Cset"][1];
+    C2=CTM["Cset"][2];
+    C3=CTM["Cset"][3];
+    C4=CTM["Cset"][4];
+    T1=CTM["Tset"][1];
+    T2=CTM["Tset"][2];
+    T3=CTM["Tset"][3];
+    T4=CTM["Tset"][4];
+    if direction=="x"
+        @tensor vl_FP[:]:=C1[1,-1]*T4[2,-2,1]*C4[-3,2];
+        @tensor vr_FP[:]:=C2[-1,1]*T2[1,-2,2]*C3[2,-3];
+        for dis=1:20
+            @tensor vl_FP[:]:=vl_FP[1,3,5]*T1[1,2,-1]*AA_fused[3,4,-2,2]*T3[-3,4,5];
+            vl_FP=vl_FP/norm(vl_FP);
+            @tensor vr_FP[:]:=T1[-1,2,1]*AA_fused[-2,4,3,2]*T3[5,4,-3]*vr_FP[1,3,5];
+            vr_FP=vr_FP/norm(vr_FP);
+        end
+
+    end
+    if method=="dimerdimer"#operator on a single site conserves su2 symmetry
+        if direction=="x"
+            @tensor va[:]:=vl_FP[1,3,5]*T1[1,2,-1]*AA_op1[3,4,-2,2]*T3[-3,4,5];
+            @tensor vb[:]:=T1[-1,2,1]*AA_op2[-2,4,3,2]*T3[5,4,-3]*vr_FP[1,3,5];
+            @tensor ov[:]:=va[1,2,3]*vb[1,2,3]
+            correl_funs[1]=blocks(ov)[(Irrep[U₁](0) ⊠ Irrep[SU₂](0))][1];
+            
+            for dis=2:distance
+                @tensor va[:]:=va[1,3,5]*T1[1,2,-1]*AA_fused[3,4,-2,2]*T3[-3,4,5];
+                @tensor ov[:]:=va[1,2,3]*vb[1,2,3]
+                correl_funs[dis]=blocks(ov)[(Irrep[U₁](0) ⊠ Irrep[SU₂](0))][1];
+            end
+            return correl_funs
+        end
+    elseif method=="spinspin" #operator on a single site breaks su2 symmetry, so there is an extra index obtained from svd of two-site operator
+        if direction=="x"
+            @tensor va[:]:=vl_FP[1,3,5]*T1[1,2,-1]*AA_op1[3,4,-2,2,-4]*T3[-3,4,5];     
+            @tensor vb[:]:=T1[-1,2,1]*AA_op2[-2,4,3,2,-4]*T3[5,4,-3]*vr_FP[1,3,5];    
+            @tensor ov[:]:=va[1,2,3,4]*vb[1,2,3,4]
+            correl_funs[1]=blocks(ov)[(Irrep[U₁](0) ⊠ Irrep[SU₂](0))][1];
+            
+            for dis=2:distance
+                @tensor va[:]:=va[1,3,5,-4]*T1[1,2,-1]*AA_fused[3,4,-2,2]*T3[-3,4,5];
+                @tensor ov[:]:=va[1,2,3,4]*vb[1,2,3,4]
+                correl_funs[dis]=blocks(ov)[(Irrep[U₁](0) ⊠ Irrep[SU₂](0))][1];
+            end
+            return correl_funs
+        end
+    end
+end
+
 function correl_TransOp(vl,Tup,Tdown,AAfused)
     if AAfused==[]
         
@@ -445,6 +499,58 @@ function cal_correl(M, AA_fused,AA_SS,AA_SAL,AA_SBL,AA_SAR,AA_SBR, chi,CTM, dist
     _,corner_spec=svd(convert(Array,CTM["Cset"][1]))
 
     mat_filenm="correl_M"*string(M)*"_chi"*string(chi)*".mat";
+    matwrite(mat_filenm, Dict(
+        "corner_spec" => corner_spec,
+        "SS_cell_ob" => SS_cell_ob,
+        "dimer_ob" => dimer_ob,
+        "SASA_ob" => SASA_ob,
+        "SASB_ob" => SASB_ob,
+        "SBSA_ob" => SBSA_ob,
+        "SBSB_ob" => SBSB_ob,
+        "eus_x" => eus_x,
+        "Qspin_x"=> Qspin_x,
+        "QN_x"=> QN_x,
+        "CTM_space"=> string(space(CTM["Cset"][1]))
+    ); compress = false)
+end
+
+
+function cal_correl_FP_edge(M, AA_fused,AA_SS,AA_SAL,AA_SBL,AA_SAR,AA_SBR, chi,CTM, distance)
+    #M: number of virtual modes 
+    
+
+
+    #single-unitcell correlations
+    norm=ob_1site_closed(CTM,AA_fused);
+    
+    SS_cell_ob=ob_1site_closed(CTM,AA_SS);
+    SS_cell_ob=SS_cell_ob/norm;
+
+    
+    norms=evaluate_correl_spinspin_FP_edge("x", AA_fused, AA_fused, AA_fused, CTM, "dimerdimer", 10);
+    norm_coe=norms[5]/norms[4] #get a rough normalization coefficient to avoid that the number becomes two small
+    norms=evaluate_correl_spinspin_FP_edge("x", AA_fused/norm_coe, AA_fused, AA_fused, CTM, "dimerdimer", distance);
+    dimer_ob=evaluate_correl_spinspin_FP_edge("x", AA_fused/norm_coe, AA_SS, AA_SS, CTM, "dimerdimer", distance);
+
+    SASA_ob=evaluate_correl_spinspin_FP_edge("x", AA_fused/norm_coe, AA_SAL, AA_SAR, CTM, "spinspin", distance);
+    SASB_ob=evaluate_correl_spinspin_FP_edge("x", AA_fused/norm_coe, AA_SAL, AA_SBR, CTM, "spinspin", distance);
+    SBSA_ob=evaluate_correl_spinspin_FP_edge("x", AA_fused/norm_coe, AA_SBL, AA_SAR, CTM, "spinspin", distance);
+    SBSB_ob=evaluate_correl_spinspin_FP_edge("x", AA_fused/norm_coe, AA_SBL, AA_SBR, CTM, "spinspin", distance);
+
+    dimer_ob=dimer_ob./norms;
+    SASA_ob=SASA_ob./norms;
+    SASB_ob=SASB_ob./norms;
+    SBSA_ob=SBSA_ob./norms;
+    SBSB_ob=SBSB_ob./norms;
+
+    println(norms)
+
+    eus_x, Qspin_x, QN_x=solve_correl_length(5,AA_fused/norm_coe,CTM,"x");
+
+
+    _,corner_spec=svd(convert(Array,CTM["Cset"][1]))
+
+    mat_filenm="correl_FP_edge_M"*string(M)*"_chi"*string(chi)*".mat";
     matwrite(mat_filenm, Dict(
         "corner_spec" => corner_spec,
         "SS_cell_ob" => SS_cell_ob,
