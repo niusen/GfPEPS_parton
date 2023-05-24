@@ -113,6 +113,8 @@ function ES_CTMRG_ED_Kprojector(CTM,U_L,U_D,U_R,U_U,M,chi,N,EH_n,decomp=false,y_
         V_ES=space(O1,4)*space(O1,4)*space(O1,4)*space(O1,4)*space(O1,4)*space(O1,4);
     elseif N==7
         V_ES=space(O1,4)*space(O1,4)*space(O1,4)*space(O1,4)*space(O1,4)*space(O1,4)*space(O1,4);
+    elseif N==8
+        V_ES=space(O1,4)*space(O1,4)*space(O1,4)*space(O1,4)*space(O1,4)*space(O1,4)*space(O1,4)*space(O1,4);
     end
     Q_Sectors,S_Sectors,Degeneracy=Space_decomp(fuse(V_ES));
 
@@ -173,6 +175,13 @@ function ES_CTMRG_ED_Kprojector(CTM,U_L,U_D,U_R,U_U,M,chi,N,EH_n,decomp=false,y_
                 v_init=k_projection(v_init,N,kphase,normalize);
                 norm1=norm(v_init);
                 @tensor v_init[:]:=v_init[1,2,3,4,5,6,-4,-5]*U_DD[-1,1,2]*U_DD[-2,3,4]*U_DD[-3,5,6];
+            elseif N==8
+                v_init=TensorMap(randn, space(O1,4)*space(O1,4)*space(O1,4)*space(O1,4)*space(O1,4)*space(O1,4)*space(O1,4)*space(O1,4),GradedSpace[Irrep[U₁]⊠Irrep[SU₂]]((Q_Sectors[sps],S_Sectors[sps])=>1));
+                v_init=permute(v_init,(1,2,3,4,5,6,7,8,9,),());
+                norm0=norm(v_init);
+                v_init=k_projection(v_init,N,kphase,normalize);
+                norm1=norm(v_init);
+                @tensor v_init[:]:=v_init[1,2,3,4,5,6,7,8,-5]*U_DD[-1,1,2]*U_DD[-2,3,4]*U_DD[-3,5,6]*U_DD[-4,7,8];
             end
 
             if mod(S_Sectors[sps],1)==0.5
@@ -327,6 +336,8 @@ function ES_CTMRG_ED(CTM,U_L,U_D,U_R,U_U,M,chi,N,EH_n,decomp=false,y_anti_pbc=fa
         V_ES=space(O1,4)*space(O1,4)*space(O1,4)*space(O1,4)*space(O1,4)*space(O1,4);
     elseif N==7
         V_ES=space(O1,4)*space(O1,4)*space(O1,4)*space(O1,4)*space(O1,4)*space(O1,4)*space(O1,4);
+    elseif N==8
+        V_ES=space(O1,4)*space(O1,4)*space(O1,4)*space(O1,4)*space(O1,4)*space(O1,4)*space(O1,4)*space(O1,4);
     end
     Q_Sectors,S_Sectors,Degeneracy=Space_decomp(fuse(V_ES));
 
@@ -367,6 +378,10 @@ function ES_CTMRG_ED(CTM,U_L,U_D,U_R,U_U,M,chi,N,EH_n,decomp=false,y_anti_pbc=fa
             v_init=TensorMap(randn, space(O1,4)*space(O1,4)*space(O1,4)*space(O1,4)*space(O1,4)*space(O1,4)*space(O1,4),GradedSpace[Irrep[U₁]⊠Irrep[SU₂]]((Q_Sectors[sps],S_Sectors[sps])=>1));
             v_init=permute(v_init,(1,2,3,4,5,6,7,8,),());
             @tensor v_init[:]:=v_init[1,2,3,4,5,6,-4,-5]*U_DD[-1,1,2]*U_DD[-2,3,4]*U_DD[-3,5,6];
+        elseif N==8
+            v_init=TensorMap(randn, space(O1,4)*space(O1,4)*space(O1,4)*space(O1,4)*space(O1,4)*space(O1,4)*space(O1,4)*space(O1,4),GradedSpace[Irrep[U₁]⊠Irrep[SU₂]]((Q_Sectors[sps],S_Sectors[sps])=>1));
+            v_init=permute(v_init,(1,2,3,4,5,6,7,8,9,),());
+            @tensor v_init[:]:=v_init[1,2,3,4,5,6,7,8,-5]*U_DD[-1,1,2]*U_DD[-2,3,4]*U_DD[-3,5,6]*U_DD[-4,7,8];
         end
         if mod(S_Sectors[sps],1)==0.5
             parity="odd";
@@ -472,6 +487,15 @@ function calculate_k(ev,N,U_DD)
         for cc=1:length(ev)
             v=ev[cc];
             @tensor v[:]:=v[1,2,3,-7,-8]*U_DD'[-1,-2,1]*U_DD'[-3,-4,2]*U_DD'[-5,-6,3];
+            vp=fermi_translate(v,N);
+            phase=dot(v,vp)/dot(v,v);
+        
+            k_phase[cc]=phase;
+        end
+    elseif N==8
+        for cc=1:length(ev)
+            v=ev[cc];
+            @tensor v[:]:=v[1,2,3,4,-9]*U_DD'[-1,-2,1]*U_DD'[-3,-4,2]*U_DD'[-5,-6,3]*U_DD'[-7,-8,4];
             vp=fermi_translate(v,N);
             phase=dot(v,vp)/dot(v,v);
         
@@ -618,6 +642,20 @@ function CTM_T_action(O1,O2,O1O1,O2O2,v0,N,parity,gate_O1,gate_O2,k_projector,kp
             v_new=k_projection(v_new,N,kphase,normalize);
             @tensor v_new[:]:=v_new[1,2,3,4,5,6,-4,-5]*U_DD[-1,1,2]*U_DD[-2,3,4]*U_DD[-3,5,6];
         end
+    elseif N==8
+        if parity=="even"
+            @tensor v_new[:]:=O2O2[9,2,3,-1]*O2O2[3,4,5,-2]*O2O2[5,6,7,-3]*O2O2[7,8,1,-4]*v0[2,4,6,8,-5]*gate_O2[9,1];
+            @tensor v_new[:]:=O1O1[9,2,3,-1]*O1O1[3,4,5,-2]*O1O1[5,6,7,-3]*O1O1[7,8,1,-4]*v_new[2,4,6,8,-5]*gate_O1[9,1];
+        elseif parity=="odd"
+            @tensor v_new[:]:=O2O2[8,1,2,-1]*O2O2[2,3,4,-2]*O2O2[4,5,6,-3]*O2O2[6,7,8,-4]*v0[1,3,5,7,-5];
+            @tensor v_new[:]:=O1O1[8,1,2,-1]*O1O1[2,3,4,-2]*O1O1[4,5,6,-3]*O1O1[6,7,8,-4]*v_new[1,3,5,7,-5];
+        end
+        if k_projector 
+            #momentum projector
+            @tensor v_new[:]:=v_new[1,2,3,4,-9]*U_DD'[-1,-2,1]*U_DD'[-3,-4,2]*U_DD'[-5,-6,3]*U_DD'[-7,-8,4];
+            v_new=k_projection(v_new,N,kphase,normalize);
+            @tensor v_new[:]:=v_new[1,2,3,4,5,6,7,8,-5]*U_DD[-1,1,2]*U_DD[-2,3,4]*U_DD[-3,5,6]*U_DD[-4,7,8];
+        end
     end
     return v_new
 end
@@ -650,6 +688,14 @@ function fermi_translate(v,N)
         v=permute_neighbour_ind(v,4,5,8);#L2',L3',L4',L5',L1',L6',L7',dummy
         v=permute_neighbour_ind(v,5,6,8);#L2',L3',L4',L5',L6',L1',L7',dummy
         v=permute_neighbour_ind(v,6,7,8);#L2',L3',L4',L5',L6',L7',L1',dummy
+    elseif N==8
+        v=permute_neighbour_ind(v,1,2,9);#L2',L1',L3',L4',L5',L6',L7',L8',dummy
+        v=permute_neighbour_ind(v,2,3,9);#L2',L3',L1',L4',L5',L6',L7',L8',dummy
+        v=permute_neighbour_ind(v,3,4,9);#L2',L3',L4',L1',L5',L6',L7',L8',dummy
+        v=permute_neighbour_ind(v,4,5,9);#L2',L3',L4',L5',L1',L6',L7',L8',dummy
+        v=permute_neighbour_ind(v,5,6,9);#L2',L3',L4',L5',L6',L1',L7',L8',dummy
+        v=permute_neighbour_ind(v,6,7,9);#L2',L3',L4',L5',L6',L7',L1',L8',dummy
+        v=permute_neighbour_ind(v,7,8,9);#L2',L3',L4',L5',L6',L7',L8',L1',dummy
     end
     return v
 
@@ -736,6 +782,8 @@ function ES_CTMRG_ED_fixedSpin(CTM,U_L,U_D,U_R,U_U,M,chi,N,EH_n,decomp=false,y_a
         V_ES=space(O1,4)*space(O1,4)*space(O1,4)*space(O1,4)*space(O1,4)*space(O1,4);
     elseif N==7
         V_ES=space(O1,4)*space(O1,4)*space(O1,4)*space(O1,4)*space(O1,4)*space(O1,4)*space(O1,4);
+    elseif N==8
+        V_ES=space(O1,4)*space(O1,4)*space(O1,4)*space(O1,4)*space(O1,4)*space(O1,4)*space(O1,4)*space(O1,4);
     end
     Q_Sectors,S_Sectors,Degeneracy=Space_decomp(fuse(V_ES));
 
@@ -776,6 +824,10 @@ function ES_CTMRG_ED_fixedSpin(CTM,U_L,U_D,U_R,U_U,M,chi,N,EH_n,decomp=false,y_a
             v_init=TensorMap(randn, space(O1,4)*space(O1,4)*space(O1,4)*space(O1,4)*space(O1,4)*space(O1,4)*space(O1,4),GradedSpace[Irrep[U₁]⊠Irrep[SU₂]]((Q_Sectors[sps],S_Sectors[sps])=>1));
             v_init=permute(v_init,(1,2,3,4,5,6,7,8,),());
             @tensor v_init[:]:=v_init[1,2,3,4,5,6,-4,-5]*U_DD[-1,1,2]*U_DD[-2,3,4]*U_DD[-3,5,6];
+        elseif N==8
+            v_init=TensorMap(randn, space(O1,4)*space(O1,4)*space(O1,4)*space(O1,4)*space(O1,4)*space(O1,4)*space(O1,4)*space(O1,4),GradedSpace[Irrep[U₁]⊠Irrep[SU₂]]((Q_Sectors[sps],S_Sectors[sps])=>1));
+            v_init=permute(v_init,(1,2,3,4,5,6,7,8,9,),());
+            @tensor v_init[:]:=v_init[1,2,3,4,5,6,7,8,-5]*U_DD[-1,1,2]*U_DD[-2,3,4]*U_DD[-3,5,6]*U_DD[-4,7,8];
         end
         if mod(S_Sectors[sps],1)==0.5
             parity="odd";
@@ -911,6 +963,8 @@ function ES_CTMRG_ED_fixedQn(CTM,U_L,U_D,U_R,U_U,M,chi,N,EH_n,Q_min,Q_max,decomp
         V_ES=space(O1,4)*space(O1,4)*space(O1,4)*space(O1,4)*space(O1,4)*space(O1,4);
     elseif N==7
         V_ES=space(O1,4)*space(O1,4)*space(O1,4)*space(O1,4)*space(O1,4)*space(O1,4)*space(O1,4);
+    elseif N==8
+        V_ES=space(O1,4)*space(O1,4)*space(O1,4)*space(O1,4)*space(O1,4)*space(O1,4)*space(O1,4)*space(O1,4);
     end
     Q_Sectors,S_Sectors,Degeneracy=Space_decomp(fuse(V_ES));
 
@@ -961,6 +1015,10 @@ function ES_CTMRG_ED_fixedQn(CTM,U_L,U_D,U_R,U_U,M,chi,N,EH_n,Q_min,Q_max,decomp
             v_init=TensorMap(randn, space(O1,4)*space(O1,4)*space(O1,4)*space(O1,4)*space(O1,4)*space(O1,4)*space(O1,4),GradedSpace[Irrep[U₁]⊠Irrep[SU₂]]((Q_Sectors[sps],S_Sectors[sps])=>1));
             v_init=permute(v_init,(1,2,3,4,5,6,7,8,),());
             @tensor v_init[:]:=v_init[1,2,3,4,5,6,-4,-5]*U_DD[-1,1,2]*U_DD[-2,3,4]*U_DD[-3,5,6];
+        elseif N==8
+            v_init=TensorMap(randn, space(O1,4)*space(O1,4)*space(O1,4)*space(O1,4)*space(O1,4)*space(O1,4)*space(O1,4)*space(O1,4),GradedSpace[Irrep[U₁]⊠Irrep[SU₂]]((Q_Sectors[sps],S_Sectors[sps])=>1));
+            v_init=permute(v_init,(1,2,3,4,5,6,7,8,9,),());
+            @tensor v_init[:]:=v_init[1,2,3,4,5,6,7,8,-5]*U_DD[-1,1,2]*U_DD[-2,3,4]*U_DD[-3,5,6]*U_DD[-4,7,8];
         end
         if mod(S_Sectors[sps],1)==0.5
             parity="odd";
@@ -1101,6 +1159,8 @@ function ES_CTMRG_ED_Qn_S(CTM,U_L,U_D,U_R,U_U,M,chi,N,EH_n,Qvalue,Svalue,decomp=
         V_ES=space(O1,4)*space(O1,4)*space(O1,4)*space(O1,4)*space(O1,4)*space(O1,4);
     elseif N==7
         V_ES=space(O1,4)*space(O1,4)*space(O1,4)*space(O1,4)*space(O1,4)*space(O1,4)*space(O1,4);
+    elseif N==8
+        V_ES=space(O1,4)*space(O1,4)*space(O1,4)*space(O1,4)*space(O1,4)*space(O1,4)*space(O1,4)*space(O1,4);
     end
     Q_Sectors,S_Sectors,Degeneracy=Space_decomp(fuse(V_ES));
 
@@ -1148,6 +1208,10 @@ function ES_CTMRG_ED_Qn_S(CTM,U_L,U_D,U_R,U_U,M,chi,N,EH_n,Qvalue,Svalue,decomp=
             v_init=TensorMap(randn, space(O1,4)*space(O1,4)*space(O1,4)*space(O1,4)*space(O1,4)*space(O1,4)*space(O1,4),GradedSpace[Irrep[U₁]⊠Irrep[SU₂]]((Q_Sectors[sps],S_Sectors[sps])=>1));
             v_init=permute(v_init,(1,2,3,4,5,6,7,8,),());
             @tensor v_init[:]:=v_init[1,2,3,4,5,6,-4,-5]*U_DD[-1,1,2]*U_DD[-2,3,4]*U_DD[-3,5,6];
+        elseif N==8
+            v_init=TensorMap(randn, space(O1,4)*space(O1,4)*space(O1,4)*space(O1,4)*space(O1,4)*space(O1,4)*space(O1,4)*space(O1,4),GradedSpace[Irrep[U₁]⊠Irrep[SU₂]]((Q_Sectors[sps],S_Sectors[sps])=>1));
+            v_init=permute(v_init,(1,2,3,4,5,6,7,8,9,),());
+            @tensor v_init[:]:=v_init[1,2,3,4,5,6,7,8,-5]*U_DD[-1,1,2]*U_DD[-2,3,4]*U_DD[-3,5,6]*U_DD[-4,7,8];
         end
         if mod(S_Sectors[sps],1)==0.5
             parity="odd";

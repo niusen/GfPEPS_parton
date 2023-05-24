@@ -94,10 +94,10 @@ A_origin=deepcopy(A);
 
 
 y_anti_pbc=true;
-boundary_phase_y=0.0;
+boundary_phase_y=0.5;
 
 if y_anti_pbc
-    gauge_gate1=gauge_gate(A,2,2*pi/5*boundary_phase_y);
+    gauge_gate1=gauge_gate(A,2,2*pi/6*boundary_phase_y);
     @tensor A[:]:=A[-1,1,-3,-4,-5]*gauge_gate1[-2,1];
 end
 
@@ -543,17 +543,35 @@ Spin_set2=Spin[order]
 
 
 ##########################
-eu=vcat(eu_set1,eu_set2);
-k_phase=vcat(k_phase_set1,k_phase_set2);
-Qn=vcat(Qn_set1,Qn_set2);
-Spin=vcat(Spin_set1,Spin_set2);
 
-matwrite("ES_Gutzwiller_M1_Nv6"*".mat", Dict(
-    "k_phase" => k_phase,
-    "eu" => eu,
-    "Qn"=>Qn,
-    "Spin"=>Spin
-); compress = false)
+if y_anti_pbc
+
+    matwrite("ES_Gutzwiller_APBC_M1_Nv6_MPS"*".mat", Dict(
+        "k_phase_set1" => k_phase_set1,
+        "eu_set1" => eu_set1,
+        "Qn_set1"=>Qn_set1,
+        "Spin_set1"=>Spin_set1,
+        "k_phase_set2" => k_phase_set2,
+        "eu_set2" => eu_set2,
+        "Qn_set2"=>Qn_set2,
+        "Spin_set2"=>Spin_set2
+    ); compress = false)
+
+else
+
+    matwrite("ES_Gutzwiller_PBC_M1_Nv6_MPS"*".mat", Dict(
+        "k_phase_set1" => k_phase_set1,
+        "eu_set1" => eu_set1,
+        "Qn_set1"=>Qn_set1,
+        "Spin_set1"=>Spin_set1,
+        "k_phase_set2" => k_phase_set2,
+        "eu_set2" => eu_set2,
+        "Qn_set2"=>Qn_set2,
+        "Spin_set2"=>Spin_set2
+    ); compress = false)
+end
+
+
 
 
 
