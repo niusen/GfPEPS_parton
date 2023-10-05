@@ -15,7 +15,7 @@ swap_gate_double_layer=true;
 
 M=1;#number of virtual mode
 distance=40;
-chi=40
+chi=110
 tol=1e-6
 Guztwiller=true;#add projector
 
