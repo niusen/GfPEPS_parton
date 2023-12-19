@@ -15,7 +15,7 @@ include("D:\\My Documents\\Code\\Julia_codes\\Tensor network\\GfPEPS_parton\\ES_
 include("D:\\My Documents\\Code\\Julia_codes\\Tensor network\\GfPEPS_parton\\ES_CTMRG\\ES_algorithms.jl")
 
 
-chi=40
+chi=20
 tol=1e-6
 CTM_ite_nums=500;
 CTM_trun_tol=1e-10;

@@ -1,4 +1,73 @@
-function projector_virtual(V)
+function projector_virtual(V::GradedSpace{SU2Irrep, TensorKit.SortedVectorDict{SU2Irrep, Int64}})
+
+
+    if V==Rep[SU₂](0=>2, 1/2=>1)
+        P_odd=Vector(undef,1);
+        P_even=Vector(undef,1);
+
+        M=zeros(2,4)*im;
+        M[1,1]=1;
+        M[2,2]=1
+        T=TensorMap(M,Rep[SU₂](0=>2),V);
+        P_even[1]=T;
+
+        M=zeros(2,4)*im;
+        M[1,3]=1;
+        M[2,4]=1;
+        T=TensorMap(M,Rep[SU₂](1/2=>1),V);
+        P_odd[1]=T;
+    elseif  V==Rep[SU₂](0=>2, 1/2=>1)'
+        P_odd=Vector(undef,1);
+        P_even=Vector(undef,1);
+
+        M=zeros(2,4)*im;
+        M[1,1]=1;
+        M[2,2]=1
+        T=TensorMap(M,Rep[SU₂](0=>2)',V);
+        P_even[1]=T;
+
+        M=zeros(2,4)*im;
+        M[1,3]=1;
+        M[2,4]=1;
+        T=TensorMap(M,Rep[SU₂](1/2=>1)',V);
+        P_odd[1]=T;
+    end
+
+
+    return P_odd,P_even
+end
+
+function projector_physical(V::GradedSpace{SU2Irrep, TensorKit.SortedVectorDict{SU2Irrep, Int64}})
+
+    if V==Rep[SU₂](1/2=>1)
+
+
+        P_even=[];
+
+        M=zeros(2,2)*im;
+        M[1,1]=1;
+        M[2,2]=1;
+        T=TensorMap(M,Rep[SU₂](1/2=>1),Rep[SU₂](1/2=>1));
+        P_odd=T;
+    elseif V==Rep[SU₂](1/2=>1)'
+
+        P_even=[];
+
+        M=zeros(2,2)*im;
+        M[1,1]=1;
+        M[2,2]=1;
+        T=TensorMap(M,Rep[SU₂](1/2=>1)',Rep[SU₂](1/2=>1)');
+        P_odd=T;
+
+    end
+
+    
+
+    return P_odd,P_even
+
+end
+
+function projector_virtual(V::GradedSpace{TensorKit.ProductSector{Tuple{U1Irrep, SU2Irrep}}, TensorKit.SortedVectorDict{TensorKit.ProductSector{Tuple{U1Irrep, SU2Irrep}}, Int64}})
     VV1=GradedSpace[Irrep[U₁]⊠Irrep[SU₂]]((0, 0)=>1, (2, 0)=>1, (1, 1/2)=>1)'
     VV2=GradedSpace[Irrep[U₁]⊠Irrep[SU₂]]((0, 0)=>1, (-2, 0)=>3, (-4, 0)=>1, (-1, 1/2)=>2, (-3, 1/2)=>2, (-2, 1)=>1)
     

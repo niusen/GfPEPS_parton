@@ -1,3 +1,185 @@
+function Space_decomp(V::GradedSpace{SU2Irrep, TensorKit.SortedVectorDict{SU2Irrep, Int64}})
+    Dims=V.dims;
+    Spins=Vector{Float64}(undef,length(Dims.values));
+    Degeneracy=Vector{Float64}(undef,length(Dims.values));
+    for cc in eachindex(Dims.keys)
+        Spins[cc]=Dims.keys[cc].j;
+        Degeneracy[cc]=Dims.values[cc];
+    end
+    return Spins, Degeneracy
+end
+function ES_CTMRG_ED_SU2(CTM,U_L,U_D,U_R,U_U,M,chi,N,EH_n,decomp=false,y_anti_pbc=false)
+    k_phase=[];
+    eu=[];
+    Spin=[];
+
+
+    Tleft=CTM["Tset"][4];
+    Tright=CTM["Tset"][2];
+    @tensor O1[:]:=Tleft[-1,1,-3]*U_L[1,-4,-2];
+    @tensor O2[:]:=Tright[-3,1,-1]*U_R[-2,-4,1];
+    O1=O1/norm(O1);
+    O2=O2/norm(O2);
+    O1=O1*sqrt(chi);
+    O2=O2*sqrt(chi);
+    #firstly apply O2, then O1
+
+    gate_O1=parity_gate(O1,3);
+    gate_O2=parity_gate(O2,3);
+    global gate_O1,gate_O2
+
+    U_DD=unitary(fuse(space(O1,4)*space(O1,4)), space(O1,4)*space(O1,4));
+    @tensor O1O1[:]:=O1[-1,4,1,2]*O1[1,5,-3,3]*U_DD[-4,2,3]*U_DD'[4,5,-2];
+    @tensor O2O2[:]:=O2[-1,4,1,2]*O2[1,5,-3,3]*U_DD[-4,2,3]*U_DD'[4,5,-2];
+
+    if decomp
+        Ps=projector_general_SU2_U1(space(O1,3));
+        siz=length(Ps);
+        O1O1_L=Vector{Any}(undef, siz);
+        O1O1_R=Vector{Any}(undef, siz);
+        O1_R=Vector{Any}(undef, siz);
+        gate_O1_R=Vector{Any}(undef, siz);
+        for cp=1:siz
+            @tensor T[:]:=O1O1[1,-2,-3,-4]*Ps[cp]'[1,-1];
+            O1O1_L[cp]=T;
+            @tensor T[:]:=O1O1[-1,-2,1,-4]*Ps[cp][-3,1];
+            O1O1_R[cp]=T;
+            @tensor T[:]:=O1[-1,-2,1,-4]*Ps[cp][-3,1];
+            O1_R[cp]=T;
+            @tensor T[:]:=gate_O1[1,-2]*Ps[cp][-1,1];
+            gate_O1_R[cp]=T;
+        end
+
+        Ps=projector_general_SU2_U1(space(O2,1));
+        siz=length(Ps);
+        O2O2_L=Vector{Any}(undef, siz);
+        O2O2_R=Vector{Any}(undef, siz);
+        O2_R=Vector{Any}(undef, siz);
+        gate_O2_R=Vector{Any}(undef, siz);
+        for cp=1:siz
+            @tensor T[:]:=O2O2[1,-2,-3,-4]*Ps[cp][-1,1];
+            O2O2_L[cp]=T;
+            @tensor T[:]:=O2O2[-1,-2,1,-4]*Ps[cp]'[1,-3];
+            O2O2_R[cp]=T;
+            @tensor T[:]:=O2[-1,-2,1,-4]*Ps[cp]'[1,-3];
+            O2_R[cp]=T;
+            @tensor T[:]:=gate_O2[1,-2]*Ps[cp]'[1,-1];
+            gate_O2_R[cp]=T;
+        end
+        global O1O1_L,O2O2_L,O1O1_R,O2O2_R,O1_R,O2_R,gate_O1_R,gate_O2_R
+    end
+    
+    println("calculate ES for N="*string(N));
+    if N==3
+        V_ES=space(O1,4)*space(O1,4)*space(O1,4);
+    elseif N==4
+        V_ES=space(O1,4)*space(O1,4)*space(O1,4)*space(O1,4);
+    elseif N==5
+        V_ES=space(O1,4)*space(O1,4)*space(O1,4)*space(O1,4)*space(O1,4);
+    elseif N==6
+        V_ES=space(O1,4)*space(O1,4)*space(O1,4)*space(O1,4)*space(O1,4)*space(O1,4);
+    elseif N==7
+        V_ES=space(O1,4)*space(O1,4)*space(O1,4)*space(O1,4)*space(O1,4)*space(O1,4)*space(O1,4);
+    elseif N==8
+        V_ES=space(O1,4)*space(O1,4)*space(O1,4)*space(O1,4)*space(O1,4)*space(O1,4)*space(O1,4)*space(O1,4);
+    end
+    S_Sectors,Degeneracy=Space_decomp(fuse(V_ES));
+
+
+
+    order=findall(x -> x<3, S_Sectors);
+    S_Sectors=S_Sectors[order];
+    Degeneracy=Degeneracy[order];
+
+    println("Space of ES:")
+    println("Spin:")
+    println(S_Sectors);
+    println("degeneracy:")
+    println(Degeneracy);flush(stdout);
+
+
+    for sps in eachindex(S_Sectors)
+        if N==3
+            v_init=TensorMap(randn, space(O1,4)*space(O1,4)*space(O1,4),Rep[SU₂](S_Sectors[sps]=>1));
+            v_init=permute(v_init,(1,2,3,4,),());
+            @tensor v_init[:]:=v_init[1,2,-2,-3]*U_DD[-1,1,2];
+        elseif N==4
+            v_init=TensorMap(randn, space(O1,4)*space(O1,4)*space(O1,4)*space(O1,4),Rep[SU₂](S_Sectors[sps]=>1));
+            v_init=permute(v_init,(1,2,3,4,5,),());
+            @tensor v_init[:]:=v_init[1,2,3,4,-3]*U_DD[-1,1,2]*U_DD[-2,3,4];
+        elseif N==5
+            v_init=TensorMap(randn, space(O1,4)*space(O1,4)*space(O1,4)*space(O1,4)*space(O1,4),Rep[SU₂](S_Sectors[sps]=>1));
+            v_init=permute(v_init,(1,2,3,4,5,6,),());
+            @tensor v_init[:]:=v_init[1,2,3,4,-3,-4]*U_DD[-1,1,2]*U_DD[-2,3,4];
+        elseif N==6
+            v_init=TensorMap(randn, space(O1,4)*space(O1,4)*space(O1,4)*space(O1,4)*space(O1,4)*space(O1,4),Rep[SU₂](S_Sectors[sps]=>1));
+            v_init=permute(v_init,(1,2,3,4,5,6,7,),());
+            @tensor v_init[:]:=v_init[1,2,3,4,5,6,-4]*U_DD[-1,1,2]*U_DD[-2,3,4]*U_DD[-3,5,6];
+        elseif N==7
+            v_init=TensorMap(randn, space(O1,4)*space(O1,4)*space(O1,4)*space(O1,4)*space(O1,4)*space(O1,4)*space(O1,4),Rep[SU₂](S_Sectors[sps]=>1));
+            v_init=permute(v_init,(1,2,3,4,5,6,7,8,),());
+            @tensor v_init[:]:=v_init[1,2,3,4,5,6,-4,-5]*U_DD[-1,1,2]*U_DD[-2,3,4]*U_DD[-3,5,6];
+        elseif N==8
+            v_init=TensorMap(randn, space(O1,4)*space(O1,4)*space(O1,4)*space(O1,4)*space(O1,4)*space(O1,4)*space(O1,4)*space(O1,4),Rep[SU₂](S_Sectors[sps]=>1));
+            v_init=permute(v_init,(1,2,3,4,5,6,7,8,9,),());
+            @tensor v_init[:]:=v_init[1,2,3,4,5,6,7,8,-5]*U_DD[-1,1,2]*U_DD[-2,3,4]*U_DD[-3,5,6]*U_DD[-4,7,8];
+        end
+        if mod(S_Sectors[sps],1)==0.5
+            parity="odd";
+        elseif mod(S_Sectors[sps],1)==0
+            parity="even";
+        end
+
+        contraction_fun(x)=CTM_T_action(O1,O2,O1O1,O2O2,x,N,parity,gate_O1,gate_O2,false,nothing,decomp);
+
+        @time eu_,ev=eigsolve(contraction_fun, v_init, min(EH_n,Int(Degeneracy[sps])),:LM,Arnoldi(krylovdim=EH_n*2+5));
+
+        @time ks=calculate_k(ev,N,U_DD)
+
+        println("Spin="*string(S_Sectors[sps]));flush(stdout);
+        println(eu_)
+        println(ks)
+
+        k_phase=vcat(k_phase,ks);
+        eu=vcat(eu,eu_);
+        Spin=vcat(Spin,S_Sectors[sps]*ones(length(eu_)));
+    end
+
+
+    k_phase=ComplexF64.(k_phase);
+    eu=ComplexF64.(eu);
+    Spin=Float64.(Spin);
+
+
+
+    order=sortperm(abs.(eu));
+    eu=eu[order];
+    eu=eu/sum(eu);
+    k_phase=k_phase[order];
+    Spin=Spin[order]
+
+    if decomp
+        if y_anti_pbc
+            ES_filenm="ES_CTMite_APBC_decomp_Gutzwiller"*"_M"*string(M)*"_N"*string(N)*"_chi"*string(chi)*".mat";
+        else
+            ES_filenm="ES_CTMite_PBC_decomp_Gutzwiller"*"_M"*string(M)*"_N"*string(N)*"_chi"*string(chi)*".mat";
+        end
+    else
+        if y_anti_pbc
+            ES_filenm="ES_CTMite_APBC_Gutzwiller"*"_M"*string(M)*"_N"*string(N)*"_chi"*string(chi)*".mat";
+        else
+            ES_filenm="ES_CTMite_PBC_Gutzwiller"*"_M"*string(M)*"_N"*string(N)*"_chi"*string(chi)*".mat";
+        end
+    end
+    matwrite(ES_filenm, Dict(
+        "k_phase" => k_phase,
+        "eu" => eu,
+        "Spin"=>Spin
+    ); compress = false)
+
+
+end
+
 
 function Space_decomp(V1)
 
