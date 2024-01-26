@@ -212,7 +212,7 @@ function ob_2sites_x(CTM,AA1,AA2,is_odd)
     return rho;
 end
 
-function build_double_layer_swap_op(A1,A_mid,A2,H_term)
+function build_double_layer_swap_op(A1,A_mid,A2,H_term) #for x direction hopping 
     A1=deepcopy(A1)
     A2=deepcopy(A2)
     A_mid=deepcopy(A_mid);
@@ -227,7 +227,7 @@ function build_double_layer_swap_op(A1,A_mid,A2,H_term)
         @tensor A1[:]:= A1[-1,-2,-3,-4,1]*H_term["O1"][-6,-5,1]
         @tensor A2[:]:= A2[-1,-2,-3,-4,1]*H_term["O2"][-6,-5,1]
         O_string=unitary(space(H_term["O1"],1),space(H_term["O1"],1));
-
+        
         if H_term["direction"]=="x"
             @assert H_term["sign1"]==[1,1,1,1,0];
             @assert H_term["sign2"]==[0,0,0,1,0];
@@ -274,6 +274,192 @@ function build_double_layer_swap_op(A1,A_mid,A2,H_term)
 
 end
 
+
+function build_double_layer_swap_LU_RU_RD(A_LU,A_RU,A_RD,H_term) #for x direction hopping 
+    A_LU=deepcopy(A_LU);
+    A_RU=deepcopy(A_RU);
+    A_RD=deepcopy(A_RD);
+    A_LU_origin=deepcopy(A_LU);
+    A_RU_origin=deepcopy(A_RU);
+    A_RD_origin=deepcopy(A_RD);
+
+
+
+    if H_term["p1"]%2==1 # has extra leg
+        #the first index of O is dummy
+        @tensor A_LU[:]:= A_LU[-1,-2,-3,-4,1]*H_term["O1"][-6,-5,1]
+        @tensor A_RD[:]:= A_RD[-1,-2,-3,-4,1]*H_term["O2"][-6,-5,1]
+        O_string=unitary(space(H_term["O1"],1),space(H_term["O1"],1));
+        
+        
+        if H_term["direction"]=="x"
+            @assert H_term["sign1"]==[1,1,1,1,0];
+            @assert H_term["sign2"]==[0,0,0,1,0];
+            
+            gate=parity_gate(A_LU,1); @tensor A_LU[:]:=A_LU[1,-2,-3,-4,-5,-6]*gate[-1,1];
+            gate=parity_gate(A_LU,2); @tensor A_LU[:]:=A_LU[-1,1,-3,-4,-5,-6]*gate[-2,1];
+            gate=parity_gate(A_LU,4); @tensor A_LU[:]:=A_LU[-1,-2,-3,1,-5,-6]*gate[-4,1];
+
+            #gate=parity_gate(A_mid,2); @tensor A_mid[:]:=A_mid[-1,1,-3,-4,-5]*gate[-2,1];
+
+            gate=parity_gate(A_RD,4); @tensor A_RD[:]:=A_RD[-1,-2,-3,1,-5,-6]*gate[-4,1];
+        end
+
+        @assert H_term["ind1"]==3
+        @assert H_term["ind2"]==1
+
+        U1=unitary(fuse(space(A_LU,3)⊗space(A_LU,6)), space(A_LU,3)⊗space(A_LU,6)); 
+        U2=unitary(fuse(space(A_RD,4)⊗space(A_RD,6)), space(A_RD,4)⊗space(A_RD,6)); 
+        @tensor A_LU_new[:]:=A_LU[-1,-2,1,-4,-5,2]*U1[-3,1,2];
+        @tensor A_RU_new[:]:=A_RU[1,3,-3,-4,-5]*O_string[4,2]*U1'[1,2,-1]*U2'[3,4,-2];
+        @tensor A_RD_new[:]:=A_RD[-1,-2,-3,1,-5,2]*U2[-4,1,2];
+
+        A_LU_double,_,_,_,_=build_double_layer_swap(A_LU_origin',A_LU_new);
+        A_RU_double,_,_,_,_=build_double_layer_swap(A_RU_origin',A_RU_new);
+        A_RD_double,_,_,_,_=build_double_layer_swap(A_RD_origin',A_RD_new);
+
+        return A_LU_double,A_RU_double,A_RD_double
+
+
+
+    else # No extra leg
+        @tensor A1[:]:= A1[-1,-2,-3,-4,1]*H_term["O1"][-5,1]
+        @tensor A2[:]:= A2[-1,-2,-3,-4,1]*H_term["O2"][-5,1]
+        A1_new=A1
+        A2_new=A2
+
+        A1_double,_,_,_,_=build_double_layer_swap(A1_origin',A1_new)
+        A2_double,_,_,_,_=build_double_layer_swap(A2_origin',A2_new)
+
+        return A1_double,nothing,A2_double
+    end
+
+end
+
+
+
+
+function build_double_layer_swap_LD_RD_RU(A_LD,A_RD,A_RU,H_term) #for x direction hopping 
+    A_LD=deepcopy(A_LD);
+    A_RU=deepcopy(A_RU);
+    A_RD=deepcopy(A_RD);
+    A_LD_origin=deepcopy(A_LD);
+    A_RU_origin=deepcopy(A_RU);
+    A_RD_origin=deepcopy(A_RD);
+
+
+
+    if H_term["p1"]%2==1 # has extra leg
+        #the first index of O is dummy
+        @tensor A_LD[:]:= A_LD[-1,-2,-3,-4,1]*H_term["O1"][-6,-5,1]
+        @tensor A_RU[:]:= A_RU[-1,-2,-3,-4,1]*H_term["O2"][-6,-5,1]
+        O_string=unitary(space(H_term["O1"],1),space(H_term["O1"],1));
+        
+        
+        if H_term["direction"]=="x"
+            @assert H_term["sign1"]==[1,1,1,1,0];
+            @assert H_term["sign2"]==[0,0,0,1,0];
+            
+            gate=parity_gate(A_LD,1); @tensor A_LD[:]:=A_LD[1,-2,-3,-4,-5,-6]*gate[-1,1];
+            gate=parity_gate(A_LD,2); @tensor A_LD[:]:=A_LD[-1,1,-3,-4,-5,-6]*gate[-2,1];
+            gate=parity_gate(A_LD,4); @tensor A_LD[:]:=A_LD[-1,-2,-3,1,-5,-6]*gate[-4,1];
+
+            gate=parity_gate(A_RD,2); @tensor A_RD[:]:=A_RD[-1,1,-3,-4,-5]*gate[-2,1];
+            gate=parity_gate(A_RD,3); @tensor A_RD[:]:=A_RD[-1,-2,1,-4,-5]*gate[-3,1];
+            gate=parity_gate(A_RD,5); @tensor A_RD[:]:=A_RD[-1,-2,-3,-4,1]*gate[-5,1];
+
+            gate=parity_gate(A_RU,3); @tensor A_RU[:]:=A_RU[-1,-2,1,-4,-5,-6]*gate[-3,1];
+            gate=parity_gate(A_RU,5); @tensor A_RU[:]:=A_RU[-1,-2,-3,-4,1,-6]*gate[-5,1];
+        end
+
+        @assert H_term["ind1"]==3
+        @assert H_term["ind2"]==1
+
+        U1=unitary(fuse(space(A_LD,3)⊗space(A_LD,6)), space(A_LD,3)⊗space(A_LD,6)); 
+        U2=unitary(fuse(space(A_RU,2)⊗space(A_RU,6)), space(A_RU,2)⊗space(A_RU,6)); 
+        @tensor A_LD_new[:]:=A_LD[-1,-2,1,-4,-5,2]*U1[-3,1,2];
+        @tensor A_RU_new[:]:=A_RU[-1,1,-3,-4,-5,2]*U2[-2,1,2];
+
+
+        @tensor A_RD_new[:]:=A_RD[1,-2,-3,3,-5]*O_string[4,2]*U1'[1,2,-1]*U2'[3,4,-4];
+
+
+        A_LD_double,_,_,_,_=build_double_layer_swap(A_LD_origin',A_LD_new);
+        A_RU_double,_,_,_,_=build_double_layer_swap(A_RU_origin',A_RU_new);
+        A_RD_double,_,_,_,_=build_double_layer_swap(A_RD_origin',A_RD_new);
+
+        return A_LD_double,A_RD_double,A_RU_double
+
+
+
+    else # No extra leg
+        @tensor A1[:]:= A1[-1,-2,-3,-4,1]*H_term["O1"][-5,1]
+        @tensor A2[:]:= A2[-1,-2,-3,-4,1]*H_term["O2"][-5,1]
+        A1_new=A1
+        A2_new=A2
+
+        A1_double,_,_,_,_=build_double_layer_swap(A1_origin',A1_new)
+        A2_double,_,_,_,_=build_double_layer_swap(A2_origin',A2_new)
+
+        return A1_double,nothing,A2_double
+    end
+
+end
+
+
+
+function build_double_layer_swap_y(A_RU,A_RD,H_term) #for x direction hopping 
+    A_RU=deepcopy(A_RU);
+    A_RD=deepcopy(A_RD);
+    A_RU_origin=deepcopy(A_RU);
+    A_RD_origin=deepcopy(A_RD);
+
+
+
+    if H_term["p1"]%2==1 # has extra leg
+        #the first index of O is dummy
+        @tensor A_RU[:]:= A_RU[-1,-2,-3,-4,1]*H_term["O1"][-6,-5,1]
+        @tensor A_RD[:]:= A_RD[-1,-2,-3,-4,1]*H_term["O2"][-6,-5,1]
+        O_string=unitary(space(H_term["O1"],1),space(H_term["O1"],1));
+        
+        
+
+        @assert H_term["sign1"]==[1,1,1,1,0];
+        @assert H_term["sign2"]==[0,0,0,1,0];
+        
+        gate=parity_gate(A_RU,1); @tensor A_RU[:]:=A_RU[1,-2,-3,-4,-5,-6]*gate[-1,1];
+        gate=parity_gate(A_RU,2); @tensor A_RU[:]:=A_RU[-1,1,-3,-4,-5,-6]*gate[-2,1];
+        gate=parity_gate(A_RU,4); @tensor A_RU[:]:=A_RU[-1,-2,-3,1,-5,-6]*gate[-4,1];
+
+
+
+
+
+        U1=unitary(fuse(space(A_RU,2)⊗space(A_RU,6)), space(A_RU,2)⊗space(A_RU,6)); 
+        @tensor A_RU_new[:]:=A_RU[-1,1,-3,-4,-5,2]*U1[-2,1,2];
+        @tensor A_RD_new[:]:=A_RD[-1,-2,-3,1,-5,2]*U1'[1,2,-4];
+
+
+        A_RU_double,_,_,_,_=build_double_layer_swap(A_RU_origin',A_RU_new);
+        A_RD_double,_,_,_,_=build_double_layer_swap(A_RD_origin',A_RD_new);
+
+        return A_RU_double,A_RD_double
+
+
+
+    else # No extra leg
+        @tensor A1[:]:= A1[-1,-2,-3,-4,1]*H_term["O1"][-5,1]
+        @tensor A2[:]:= A2[-1,-2,-3,-4,1]*H_term["O2"][-5,1]
+        A1_new=A1
+        A2_new=A2
+
+        A1_double,_,_,_,_=build_double_layer_swap(A1_origin',A1_new)
+        A2_double,_,_,_,_=build_double_layer_swap(A2_origin',A2_new)
+
+        return A1_double,nothing,A2_double
+    end
+
+end
 
 
 function build_double_layer_NoSwap_op(A1,O1,has_extra_leg)
@@ -503,19 +689,17 @@ function evaluate_correl_Cdag_C(direction, AA_fused, AA_op1, AA_op2, CTM, distan
                 correl_funs[dis]=blocks(ov)[U1Irrep(0)][1];
             end
         else
-            if direction=="x"
-                @tensor va[:]:=C1[1,3]*T4[2,5,1]*C4[7,2]*T1[3,4,-1]*AA_op1[5,6,-2,4]*T3[-3,6,7];
-                @tensor vb[:]:=T1[-1,4,3]*AA_op2[-2,6,5,4]*T3[7,6,-3]*C2[3,1]*T2[1,5,2]*C3[2,7];
+            @tensor va[:]:=C1[1,3]*T4[2,5,1]*C4[7,2]*T1[3,4,-1]*AA_op1[5,6,-2,4]*T3[-3,6,7];
+            @tensor vb[:]:=T1[-1,4,3]*AA_op2[-2,6,5,4]*T3[7,6,-3]*C2[3,1]*T2[1,5,2]*C3[2,7];
+            @tensor ov[:]:=va[1,2,3]*vb[1,2,3]
+            correl_funs[1]=blocks(ov)[U1Irrep(0)][1];
+            
+            for dis=2:distance
+                @tensor va[:]:=va[1,3,5]*T1[1,2,-1]*AA_fused[3,4,-2,2]*T3[-3,4,5];
                 @tensor ov[:]:=va[1,2,3]*vb[1,2,3]
-                correl_funs[1]=blocks(ov)[U1Irrep(0)][1];
-                
-                for dis=2:distance
-                    @tensor va[:]:=va[1,3,5]*T1[1,2,-1]*AA_fused[3,4,-2,2]*T3[-3,4,5];
-                    @tensor ov[:]:=va[1,2,3]*vb[1,2,3]
-                    correl_funs[dis]=blocks(ov)[U1Irrep(0)][1];
-                end
-                return correl_funs
+                correl_funs[dis]=blocks(ov)[U1Irrep(0)][1];
             end
+            return correl_funs
         end
         return correl_funs
     end
@@ -773,4 +957,230 @@ function ob_1site_closed(CTM,AA_fused)
     @tensor Norm[:]:=envL[1,2,3]*envR[1,2,3];
     Norm=blocks(Norm)[(Irrep[U₁](0) ⊠ Irrep[SU₂](0))][1];
     return Norm;
+end
+
+
+function ob_2x2(CTM,AA_LU,AA_RU,AA_LD,AA_RD)
+
+    Cset=CTM["Cset"];
+    Tset=CTM["Tset"];
+
+    @tensor MM_LU[:]:=Cset[1][1,2]*Tset[1][2,3,-3]*Tset[4][-1,4,1]*AA_LU[4,-2,-4,3]; 
+    @tensor MM_RU[:]:=Tset[1][-1,3,1]* Cset[2][1,2]* AA_RU[-2,-4,4,3]* Tset[2][2,4,-3];
+
+    @tensor MM_LD[:]:=Tset[4][1,3,-1]*AA_LD[3,4,-4,-2]*Cset[4][2,1]*Tset[3][-3,4,2]; 
+    @tensor MM_RD[:]:=Tset[2][-4,-3,2]*Tset[3][1,-2,-1]*Cset[3][2,1]; 
+    @tensor MM_RD[:]:=MM_RD[-1,1,2,-3]*AA_RD[-2,1,2,-4]; 
+
+
+    @tensor up[:]:=MM_LU[-1,-2,1,2]*MM_RU[1,2,-3,-4];
+    @tensor down[:]:=MM_LD[-1,-2,1,2]*MM_RD[1,2,-3,-4];
+    Norm=@tensor up[1,2,3,4]*down[1,2,3,4];
+
+    return Norm
+end
+
+
+
+
+
+
+function correl_right_bot(M,A_fused, AA_fused,U_phy1,U_phy2, chi,CTM, distance)
+    #M: number of virtual modes 
+    
+    Ident, NA, NB, NANB, CAdag, CA, CBdag, CB=Hamiltonians(M,U_phy1,U_phy2)
+
+  
+    O1=CAdag;
+    O2=CA;
+    direction="x";
+    is_odd=true;
+    H_term=create_H_term(O1,O2,direction,is_odd);
+    AA_1,AA_mid,AA_2=build_double_layer_swap_LU_RU_RD(A_fused,A_fused,A_fused,H_term);
+
+    ob=ob_2x2(CTM,AA_1,AA_mid,AA_fused,AA_2);
+    Norm=ob_2x2(CTM,AA_fused,AA_fused,AA_fused,AA_fused);
+    ob_A_A=ob/Norm;
+
+
+
+
+
+    O1=CAdag;
+    O2=CB;
+    direction="x";
+    is_odd=true;
+    H_term=create_H_term(O1,O2,direction,is_odd);
+    AA_1,AA_mid,AA_2=build_double_layer_swap_LU_RU_RD(A_fused,A_fused,A_fused,H_term);
+
+    ob=ob_2x2(CTM,AA_1,AA_mid,AA_fused,AA_2);
+    Norm=ob_2x2(CTM,AA_fused,AA_fused,AA_fused,AA_fused);
+    ob_A_B=ob/Norm;
+
+
+
+
+    O1=CBdag;
+    O2=CA;
+    direction="x";
+    is_odd=true;
+    H_term=create_H_term(O1,O2,direction,is_odd);
+    AA_1,AA_mid,AA_2=build_double_layer_swap_LU_RU_RD(A_fused,A_fused,A_fused,H_term);
+
+    ob=ob_2x2(CTM,AA_1,AA_mid,AA_fused,AA_2);
+    Norm=ob_2x2(CTM,AA_fused,AA_fused,AA_fused,AA_fused);
+    ob_B_A=ob/Norm;
+
+    
+    
+    O1=CBdag;
+    O2=CB;
+    direction="x";
+    is_odd=true;
+    H_term=create_H_term(O1,O2,direction,is_odd);
+    AA_1,AA_mid,AA_2=build_double_layer_swap_LU_RU_RD(A_fused,A_fused,A_fused,H_term);
+
+    ob=ob_2x2(CTM,AA_1,AA_mid,AA_fused,AA_2);
+    Norm=ob_2x2(CTM,AA_fused,AA_fused,AA_fused,AA_fused);
+    ob_B_B=ob/Norm;
+
+    return ob_A_A, ob_A_B, ob_B_A, ob_B_B
+    
+
+end
+
+
+
+function correl_right_top(M,A_fused, AA_fused,U_phy1,U_phy2, chi,CTM, distance)
+    #M: number of virtual modes 
+    
+    Ident, NA, NB, NANB, CAdag, CA, CBdag, CB=Hamiltonians(M,U_phy1,U_phy2)
+
+  
+    O1=CAdag;
+    O2=CA;
+    direction="x";
+    is_odd=true;
+    H_term=create_H_term(O1,O2,direction,is_odd);
+    AA_1,AA_mid,AA_2=build_double_layer_swap_LD_RD_RU(A_fused,A_fused,A_fused,H_term);
+
+    ob=ob_2x2(CTM,AA_fused,AA_2,AA_1,AA_mid);
+    Norm=ob_2x2(CTM,AA_fused,AA_fused,AA_fused,AA_fused);
+    ob_A_A=ob/Norm;
+
+
+
+
+
+    O1=CAdag;
+    O2=CB;
+    direction="x";
+    is_odd=true;
+    H_term=create_H_term(O1,O2,direction,is_odd);
+    AA_1,AA_mid,AA_2=build_double_layer_swap_LD_RD_RU(A_fused,A_fused,A_fused,H_term);
+
+    ob=ob_2x2(CTM,AA_fused,AA_2,AA_1,AA_mid);
+    Norm=ob_2x2(CTM,AA_fused,AA_fused,AA_fused,AA_fused);
+    ob_A_B=ob/Norm;
+
+
+
+
+    O1=CBdag;
+    O2=CA;
+    direction="x";
+    is_odd=true;
+    H_term=create_H_term(O1,O2,direction,is_odd);
+    AA_1,AA_mid,AA_2=build_double_layer_swap_LD_RD_RU(A_fused,A_fused,A_fused,H_term);
+
+    ob=ob_2x2(CTM,AA_fused,AA_2,AA_1,AA_mid);
+    Norm=ob_2x2(CTM,AA_fused,AA_fused,AA_fused,AA_fused);
+    ob_B_A=ob/Norm;
+
+    
+    
+    O1=CBdag;
+    O2=CB;
+    direction="x";
+    is_odd=true;
+    H_term=create_H_term(O1,O2,direction,is_odd);
+    AA_1,AA_mid,AA_2=build_double_layer_swap_LD_RD_RU(A_fused,A_fused,A_fused,H_term);
+
+    ob=ob_2x2(CTM,AA_fused,AA_2,AA_1,AA_mid);
+    Norm=ob_2x2(CTM,AA_fused,AA_fused,AA_fused,AA_fused);
+    ob_B_B=ob/Norm;
+
+
+    println("compared to exact GfPEPS, a minus sign is lost, need to check")
+    return ob_A_A, ob_A_B, ob_B_A, ob_B_B
+    
+
+end
+
+
+
+function correl_y(M,A_fused, AA_fused,U_phy1,U_phy2, chi,CTM, distance)
+    #M: number of virtual modes 
+    
+    Ident, NA, NB, NANB, CAdag, CA, CBdag, CB=Hamiltonians(M,U_phy1,U_phy2)
+
+  
+    O1=CAdag;
+    O2=CA;
+    direction="x";
+    is_odd=true;
+    H_term=create_H_term(O1,O2,direction,is_odd);
+    AA_1,AA_2=build_double_layer_swap_y(A_fused,A_fused,H_term);
+
+    ob=ob_2x2(CTM,AA_fused,AA_1,AA_fused,AA_2);
+    Norm=ob_2x2(CTM,AA_fused,AA_fused,AA_fused,AA_fused);
+    ob_A_A=ob/Norm;
+
+
+
+
+
+    O1=CAdag;
+    O2=CB;
+    direction="x";
+    is_odd=true;
+    H_term=create_H_term(O1,O2,direction,is_odd);
+    AA_1,AA_2=build_double_layer_swap_y(A_fused,A_fused,H_term);
+
+    ob=ob_2x2(CTM,AA_fused,AA_1,AA_fused,AA_2);
+    Norm=ob_2x2(CTM,AA_fused,AA_fused,AA_fused,AA_fused);
+    ob_A_B=ob/Norm;
+
+
+
+
+    O1=CBdag;
+    O2=CA;
+    direction="x";
+    is_odd=true;
+    H_term=create_H_term(O1,O2,direction,is_odd);
+    AA_1,AA_2=build_double_layer_swap_y(A_fused,A_fused,H_term);
+
+    ob=ob_2x2(CTM,AA_fused,AA_1,AA_fused,AA_2);
+    Norm=ob_2x2(CTM,AA_fused,AA_fused,AA_fused,AA_fused);
+    ob_B_A=ob/Norm;
+
+    
+    
+    O1=CBdag;
+    O2=CB;
+    direction="x";
+    is_odd=true;
+    H_term=create_H_term(O1,O2,direction,is_odd);
+    AA_1,AA_2=build_double_layer_swap_y(A_fused,A_fused,H_term);
+
+    ob=ob_2x2(CTM,AA_fused,AA_1,AA_fused,AA_2);
+    Norm=ob_2x2(CTM,AA_fused,AA_fused,AA_fused,AA_fused);
+    ob_B_B=ob/Norm;
+
+
+    
+    return ob_A_A, ob_A_B, ob_B_A, ob_B_B
+    
+
 end
