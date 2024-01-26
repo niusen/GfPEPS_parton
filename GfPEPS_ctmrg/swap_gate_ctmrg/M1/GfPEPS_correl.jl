@@ -98,4 +98,10 @@ CTM, AA_fused, U_L,U_D,U_R,U_U=init_CTM(chi,A_fused,"PBC",true);
 CAdag_CA_ob,CAdag_CB_ob,CBdag_CA_ob,CBdag_CB_ob=cal_correl(M, A_fused,AA_fused,U_phy1,U_phy2, chi,CTM, distance)
 
 
+#CAdag_CA_ob,CAdag_CB_ob,CBdag_CA_ob,CBdag_CB_ob=
 
+#correl_right_bot(M, A_fused,AA_fused,U_phy1,U_phy2, chi,CTM, distance)
+
+#correl_right_top(M, A_fused,AA_fused,U_phy1,U_phy2, chi,CTM, distance)
+
+# correl_y(M, A_fused,AA_fused,U_phy1,U_phy2, chi,CTM, distance)
