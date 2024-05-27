@@ -1,4 +1,4 @@
-using LinearAlgebra
+using LinearAlgebra:diag,I,diagm 
 using TensorKit
 using JSON
 using HDF5, JLD2, MAT

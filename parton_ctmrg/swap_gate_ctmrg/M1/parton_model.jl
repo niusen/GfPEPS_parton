@@ -1,5 +1,4 @@
-using LinearAlgebra
-using TensorKit
+
 
 function create_H_term(O1,O2,direction,is_odd)
     if direction=="x"

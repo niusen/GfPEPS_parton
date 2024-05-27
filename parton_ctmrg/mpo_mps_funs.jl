@@ -6,8 +6,8 @@
 function create_vaccum_mps(L)
     #create vaccum
 
-    V=GradedSpace[Irrep[U₁]⊠Irrep[SU₂]]((0,0)=>1,(1,1/2)=>1,(2,0)=>1);#element order after converting to dense: <0,0>, <up,down>, <up,0>, <0,down>, 
-    V_R=GradedSpace[Irrep[U₁]⊠Irrep[SU₂]]((0,0)=>1);
+    V=Rep[U₁ × SU₂]((0,0)=>1,(1,1/2)=>1,(2,0)=>1);#element order after converting to dense: <0,0>, <up,down>, <up,0>, <0,down>, 
+    V_R=Rep[U₁ × SU₂]((0,0)=>1);
 
 
 
@@ -24,14 +24,14 @@ function create_mpo(W)
     size1=size(W)[1]
     size2=size(W)[2]
 
-    V=GradedSpace[Irrep[U₁]⊠Irrep[SU₂]]((0,0)=>1,(1,1/2)=>1,(2,0)=>1);#element order after converting to dense: <0,0>, <up,down>, <up,0>, <0,down>, 
+    V=Rep[U₁ × SU₂]((0,0)=>1,(1,1/2)=>1,(2,0)=>1);#element order after converting to dense: <0,0>, <up,down>, <up,0>, <0,down>, 
 
     W_L=zeros(1,4)*im;W_L[1,2]=1;
-    V_L=GradedSpace[Irrep[U₁]⊠Irrep[SU₂]]((2,0)=>1);
+    V_L=Rep[U₁ × SU₂]((2,0)=>1);
     W_L=TensorMap(W_L, V_L ←  V);
 
     W_R=zeros(4,1)*im;W_R[1,1]=1;
-    V_R=GradedSpace[Irrep[U₁]⊠Irrep[SU₂]]((0,0)=>1);
+    V_R=Rep[U₁ × SU₂]((0,0)=>1);
     W_R=TensorMap(W_R, V ← V_R);
 
     

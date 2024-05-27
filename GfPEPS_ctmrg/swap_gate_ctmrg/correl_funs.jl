@@ -673,9 +673,6 @@ function evaluate_correl_Cdag_C(direction, AA_fused, AA_op1, AA_op2, CTM, distan
     T4=CTM["Tset"][4];
 
 
-
-
-
     if direction=="x"
         if is_odd
             @tensor va[:]:=C1[1,3]*T4[2,5,1]*C4[7,2]*T1[3,4,-1]*AA_op1[5,6,-2,4]*T3[-3,6,7];

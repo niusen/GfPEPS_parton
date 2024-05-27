@@ -16,7 +16,7 @@ M=2;#number of virtual modes per bond
 #each site has 4M virtual fermion modes
 Q=2*M+filling;#total number of physical and virtual fermions on a site; 
 #size of W matrix: (P+4M, Q)
-init_state="Hofstadter_N2_M"*string(M)*".jld";#initialize: nothing
+# init_state="Hofstadter_N2_M"*string(M)*".jld";#initialize: nothing
 #init_state="QWZ_M"*string(M)*".jld";#initialize: nothing
 #init_state="C2_model1_correct_M"*string(M)*".jld";#initialize: nothing
 #init_state="C2_model1_correct_decoupled_M"*string(M)*".jld";#initialize: nothing
@@ -25,6 +25,7 @@ init_state="Hofstadter_N2_M"*string(M)*".jld";#initialize: nothing
 #init_state="Rotate_decoupled_C2_theta_0.25_M"*string(M)*".jld";#initialize: nothing
 #init_state="Rotate_decoupled_modified_C2_theta_0.125_M"*string(M)*".jld";#initialize: nothing
 #init_state="C2_model1_correct_decoupled_modified_M"*string(M)*".jld";#initialize: nothing 
+init_state="Hofstadter_triangle_2site_M"*string(M)*".jld";#initialize: nothing
 
 W=load(init_state)["W"];
 E0=load(init_state)["E0"];
@@ -101,8 +102,8 @@ bond_m_U1=permute(bond_m_U1,(1,2,3,4,5,6,))
 bond_m=reshape(bond_m,1,4,4)
 Pm=zeros(4,4)*im;Pm[1,1]=1;Pm[2,4]=1;Pm[3,2]=1;Pm[4,3]=1;
 @tensor bond_m[:]:=bond_m[-1,1,2]*Pm[-2,1]*Pm[-3,2];
-V=GradedSpace[Irrep[U₁]⊠Irrep[SU₂]]((0,0)=>1,(1,1/2)=>1,(2,0)=>1);#element order after converting to dense: <0,0>, <up,down>, <up,0>, <0,down>, 
-Vdummy=GradedSpace[Irrep[U₁]⊠Irrep[SU₂]]((-2,0)=>1);
+V=Rep[U₁ × SU₂]((0,0)=>1,(1,1/2)=>1,(2,0)=>1);#element order after converting to dense: <0,0>, <up,down>, <up,0>, <0,down>, 
+Vdummy=Rep[U₁ × SU₂]((-2,0)=>1);
 bond_gate=TensorMap(bond_m,Vdummy ⊗ V ← V');
 bond_gate=permute(bond_gate,(1,2,3,));
 
@@ -151,7 +152,7 @@ P[1,2,1]=1;
 P[2,1,2]=1;
 P=reshape(P,2,4);
 @tensor P[:]:=P[-1,1]*Pm[-2,1];
-Vspin=GradedSpace[Irrep[U₁]⊠Irrep[SU₂]]((1,1/2)=>1);
+Vspin=Rep[U₁ × SU₂]((1,1/2)=>1);
 P_G=TensorMap(P, Vspin'  ←  V');
 
 @tensor SS_op_S[:]:=P_G[-1,1]*P_G[-2,2]*SS_op_F[1,2,3,4]*P_G'[3,-3]*P_G'[4,-4];

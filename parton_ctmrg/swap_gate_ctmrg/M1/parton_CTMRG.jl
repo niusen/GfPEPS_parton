@@ -1,5 +1,4 @@
-using LinearAlgebra
-using TensorKit
+
 
 
 function build_double_layer_swap(Ap,A)
@@ -252,7 +251,7 @@ function CTMRG(AA_fused,chi,conv_check,tol,CTM,CTM_ite_nums, CTM_trun_tol,CTM_it
     ss_old3=ones(chi)*2;
     ss_old4=ones(chi)*2;
     d=2;
-    rho_old=Matrix(I,d^3,d^3);
+    #rho_old=Matrix(I,d^3,d^3);
 
     #Iteration
 

@@ -14,10 +14,10 @@ M=1;#number of virtual modes per bond
 #each site has 4M virtual fermion modes
 Q=2*M+filling;#total number of physical and virtual fermions on a site; 
 #size of W matrix: (P+4M, Q)
-init_state="Hofstadter_N2_M"*string(M)*".jld";#initialize: nothing
+# init_state="Hofstadter_N2_M"*string(M)*".jld";#initialize: nothing
 #init_state="QWZ_M"*string(M)*".jld";#initialize: nothing
 #init_state="C2_model1_correct_M"*string(M)*".jld";#initialize: nothing
-
+init_state="Hofstadter_triangle_2site_M"*string(M)*".jld";#initialize: nothing
 
 W=load(init_state)["W"];
 E0=load(init_state)["E0"];
